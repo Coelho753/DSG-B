@@ -2,24 +2,12 @@ const Product = require('../models/Product');
 const slugify = require('../utils/slugify');
 const { calculateFinalPrice } = require('../services/promotionService');
 
-const normalizeProductPayload = (body = {}) => ({
-  nome: body.nome || body.name,
-  descricao: body.descricao || body.description,
-  preco: Number(body.preco ?? body.price),
-  estoque: Number(body.estoque ?? body.stock),
-  categoria: body.categoria || body.category || body.categoryId,
-  ativo: body.ativo,
-  promocao: body.promocao,
-});
-
 const createProduct = async (req, res, next) => {
   try {
     const imagePaths = (req.files || []).map((file) => file.path);
-    const normalized = normalizeProductPayload(req.body);
-
     const product = await Product.create({
-      ...normalized,
-      slug: slugify(normalized.nome),
+      ...req.body,
+      slug: slugify(req.body.nome),
       imagens: imagePaths,
       criadoPor: req.user._id,
     });
@@ -32,9 +20,7 @@ const createProduct = async (req, res, next) => {
 
 const updateProduct = async (req, res, next) => {
   try {
-    const payload = normalizeProductPayload(req.body);
-    Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
-
+    const payload = { ...req.body };
     if (payload.nome) payload.slug = slugify(payload.nome);
     if (req.files?.length) payload.imagens = req.files.map((file) => file.path);
 
@@ -63,38 +49,26 @@ const getProducts = async (req, res, next) => {
   try {
     const {
       categoria,
-      category,
-      categoryId,
       precoMin,
-      minPrice,
       precoMax,
-      maxPrice,
       busca,
-      search,
       ordenacao = 'maisRecentes',
-      sort,
       page = 1,
       limit = 10,
     } = req.query;
 
     const filter = { ativo: true };
 
-    const resolvedCategory = categoria || category || categoryId;
-    const resolvedSearch = busca || search;
-    const resolvedMinPrice = precoMin ?? minPrice;
-    const resolvedMaxPrice = precoMax ?? maxPrice;
-    const resolvedSort = sort || ordenacao;
-
-    if (resolvedCategory) filter.categoria = resolvedCategory;
-    if (resolvedMinPrice || resolvedMaxPrice) {
+    if (categoria) filter.categoria = categoria;
+    if (precoMin || precoMax) {
       filter.preco = {};
-      if (resolvedMinPrice) filter.preco.$gte = Number(resolvedMinPrice);
-      if (resolvedMaxPrice) filter.preco.$lte = Number(resolvedMaxPrice);
+      if (precoMin) filter.preco.$gte = Number(precoMin);
+      if (precoMax) filter.preco.$lte = Number(precoMax);
     }
-    if (resolvedSearch) {
+    if (busca) {
       filter.$or = [
-        { nome: { $regex: resolvedSearch, $options: 'i' } },
-        { descricao: { $regex: resolvedSearch, $options: 'i' } },
+        { nome: { $regex: busca, $options: 'i' } },
+        { descricao: { $regex: busca, $options: 'i' } },
       ];
     }
 
@@ -112,7 +86,7 @@ const getProducts = async (req, res, next) => {
       Product.countDocuments(filter),
       Product.find(filter)
         .populate('categoria', 'nome slug')
-        .sort(sortMap[resolvedSort] || sortMap.maisRecentes)
+        .sort(sortMap[ordenacao] || sortMap.maisRecentes)
         .skip((currentPage - 1) * perPage)
         .limit(perPage),
     ]);

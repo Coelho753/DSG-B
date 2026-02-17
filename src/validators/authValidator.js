@@ -1,31 +1,15 @@
 const { body } = require('express-validator');
 
 const registerValidator = [
-  body().custom((value, { req }) => {
-    const nome = req.body.nome || req.body.name;
-    const senha = req.body.senha || req.body.password;
-
-    if (!nome || String(nome).trim().length < 2) {
-      throw new Error('Nome deve ter ao menos 2 caracteres (nome ou name)');
-    }
-
-    if (!senha || String(senha).length < 6) {
-      throw new Error('Senha deve ter ao menos 6 caracteres (senha ou password)');
-    }
-
-    return true;
-  }),
+  body('nome').isLength({ min: 2 }).withMessage('Nome deve ter ao menos 2 caracteres'),
   body('email').isEmail().withMessage('Email inválido').normalizeEmail(),
+  body('senha').isLength({ min: 6 }).withMessage('Senha deve ter ao menos 6 caracteres'),
   body('role').optional().isIn(['user', 'admin', 'distribuidor', 'revendedor']),
 ];
 
 const loginValidator = [
   body('email').isEmail().withMessage('Email inválido').normalizeEmail(),
-  body().custom((value, { req }) => {
-    const senha = req.body.senha || req.body.password;
-    if (!senha) throw new Error('Senha é obrigatória (senha ou password)');
-    return true;
-  }),
+  body('senha').notEmpty().withMessage('Senha é obrigatória'),
 ];
 
 const refreshTokenValidator = [

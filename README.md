@@ -37,7 +37,6 @@ src/
 - `GET /api/products` com filtros, ordenação e paginação.
 - Promoção aplicada automaticamente nos retornos de produto.
 - Geração de link do WhatsApp na criação do pedido.
-- Compatibilidade de payload PT/EN em autenticação/produto/pedido (`nome|name`, `senha|password`, `preco|price`, `produtos|items`) para reduzir erros 400 de integração.
 
 ## Scripts npm
 - `npm run dev`
@@ -51,7 +50,7 @@ Copie `.env.example` para `.env` e ajuste:
 - `JWT_REFRESH_SECRET`
 - `JWT_ACCESS_EXPIRES_IN`
 - `JWT_REFRESH_EXPIRES_IN`
-- `UPLOAD_DIR` (ex.: `uploads`)
+- `UPLOAD_DIR`
 
 ## Endpoints principais
 - Auth: `/api/auth/register`, `/api/auth/login`, `/api/auth/refresh-token`

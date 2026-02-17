@@ -2,8 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const path = require('path');
-const env = require('./config/env');
 
 const authRoutes = require('./routes/authRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
@@ -23,7 +21,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('combined'));
 app.use(sanitizeInput);
 app.use('/api', apiLimiter);
-app.use('/uploads', express.static(path.resolve(env.uploadDir)));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
