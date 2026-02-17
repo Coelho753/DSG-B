@@ -12,7 +12,7 @@ router.patch(
   '/:id/role',
   authMiddleware,
   authorizeRoles('admin'),
-  body('role').isIn(['user', 'admin', 'distribuidor', 'revendedor']),
+  body('role').isIn(['user', 'admin', 'seller', 'distribuidor', 'revendedor']),
   validateRequest,
   userController.updateUserRole
 );

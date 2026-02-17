@@ -26,7 +26,7 @@ const registerValidator = [
   }),
   body('email').optional().isEmail().withMessage('Email inválido').normalizeEmail(),
   body('userEmail').optional().isEmail().withMessage('Email inválido').normalizeEmail(),
-  body('role').optional().isIn(['user', 'admin', 'distribuidor', 'revendedor']),
+  body('role').optional().isIn(['user', 'admin', 'seller', 'distribuidor', 'revendedor']),
 ];
 
 const loginValidator = [
