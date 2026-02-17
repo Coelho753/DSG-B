@@ -44,6 +44,7 @@ frontend/src/
 - Settings: `GET /api/settings`, `PUT /api/settings`
 - Dashboard: `GET /api/dashboard/metrics`
 - Auditoria: `GET /api/audit-logs`
+- Compatibilidade de rota: também responde em `/categories` e `/products` (sem prefixo `/api`) para integrações legadas.
 
 ## Exemplo de Model (MongoDB)
 ```js
