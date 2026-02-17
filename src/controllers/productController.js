@@ -20,6 +20,12 @@ const createProduct = async (req, res, next) => {
     const product = await Product.create({
       ...normalized,
       slug: slugify(normalized.nome),
+const createProduct = async (req, res, next) => {
+  try {
+    const imagePaths = (req.files || []).map((file) => file.path);
+    const product = await Product.create({
+      ...req.body,
+      slug: slugify(req.body.nome),
       imagens: imagePaths,
       criadoPor: req.user._id,
     });
@@ -35,6 +41,7 @@ const updateProduct = async (req, res, next) => {
     const payload = normalizeProductPayload(req.body);
     Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
 
+    const payload = { ...req.body };
     if (payload.nome) payload.slug = slugify(payload.nome);
     if (req.files?.length) payload.imagens = req.files.map((file) => file.path);
 
@@ -73,6 +80,10 @@ const getProducts = async (req, res, next) => {
       search,
       ordenacao = 'maisRecentes',
       sort,
+      precoMin,
+      precoMax,
+      busca,
+      ordenacao = 'maisRecentes',
       page = 1,
       limit = 10,
     } = req.query;
@@ -95,6 +106,16 @@ const getProducts = async (req, res, next) => {
       filter.$or = [
         { nome: { $regex: resolvedSearch, $options: 'i' } },
         { descricao: { $regex: resolvedSearch, $options: 'i' } },
+    if (categoria) filter.categoria = categoria;
+    if (precoMin || precoMax) {
+      filter.preco = {};
+      if (precoMin) filter.preco.$gte = Number(precoMin);
+      if (precoMax) filter.preco.$lte = Number(precoMax);
+    }
+    if (busca) {
+      filter.$or = [
+        { nome: { $regex: busca, $options: 'i' } },
+        { descricao: { $regex: busca, $options: 'i' } },
       ];
     }
 
@@ -113,6 +134,7 @@ const getProducts = async (req, res, next) => {
       Product.find(filter)
         .populate('categoria', 'nome slug')
         .sort(sortMap[resolvedSort] || sortMap.maisRecentes)
+        .sort(sortMap[ordenacao] || sortMap.maisRecentes)
         .skip((currentPage - 1) * perPage)
         .limit(perPage),
     ]);

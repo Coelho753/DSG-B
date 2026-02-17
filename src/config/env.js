@@ -10,4 +10,5 @@ module.exports = {
   jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   uploadDir: process.env.UPLOAD_DIR || 'uploads',
+  uploadDir: process.env.UPLOAD_DIR || 'src/uploads',
 };

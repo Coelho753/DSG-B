@@ -8,6 +8,7 @@ const validateRequest = (req, res, next) => {
       message: mapped[0]?.msg || 'Dados inválidos',
       errors: mapped,
     });
+    return res.status(400).json({ errors: errors.array() });
   }
   return next();
 };

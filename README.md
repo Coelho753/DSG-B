@@ -53,6 +53,7 @@ Copie `.env.example` para `.env` e ajuste:
 - `JWT_ACCESS_EXPIRES_IN`
 - `JWT_REFRESH_EXPIRES_IN`
 - `UPLOAD_DIR` (ex.: `uploads`)
+- `UPLOAD_DIR`
 
 ## Endpoints principais
 - Auth: `/api/auth/register`, `/api/auth/login`, `/api/auth/refresh-token`
