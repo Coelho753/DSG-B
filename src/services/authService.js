@@ -32,11 +32,15 @@ const normalizeRegisterPayload = (payload = {}) => ({
   endereco: normalizeAddress(payload),
   idioma: payload.idioma || payload.language,
   tema: payload.tema || payload.theme,
-  ativo: payload.ativo,
+  ativo: payload.ativo ?? true,
 });
 
 const register = async (payload, requester) => {
   const normalized = normalizeRegisterPayload(payload);
+
+  if (!normalized.email || !normalized.senha) {
+    throw new HttpError(400, 'Email e senha são obrigatórios');
+  }
 
   const emailExists = await User.findOne({ email: normalized.email });
   if (emailExists) throw new HttpError(409, 'Email já cadastrado');
@@ -51,7 +55,12 @@ const register = async (payload, requester) => {
 
   const senhaHash = await bcrypt.hash(normalized.senha, 10);
 
-  const user = await User.create({ ...normalized, role, senha: senhaHash });
+  const user = await User.create({
+    ...normalized,
+    role,
+    senha: senhaHash,
+  });
+
   return user;
 };
 
@@ -59,42 +68,21 @@ const login = async ({ email, userEmail, senha, password }) => {
   const resolvedPassword = senha || password;
   const resolvedEmail = (email || userEmail || '').toLowerCase().trim();
 
+  if (!resolvedEmail || !resolvedPassword) {
+    throw new HttpError(400, 'Email e senha são obrigatórios');
+  }
+
   const user = await User.findOne({ email: resolvedEmail });
   if (!user) throw new HttpError(401, 'Credenciais inválidas');
 
   const match = await bcrypt.compare(resolvedPassword, user.senha);
   if (!match) throw new HttpError(401, 'Credenciais inválidas');
-const { generateAccessToken, generateRefreshToken } = require('../utils/token');
-
-const register = async (payload, requester) => {
-  const emailExists = await User.findOne({ email: payload.email });
-  if (emailExists) throw new Error('Email já cadastrado');
-
-  let role = 'user';
-  if (payload.role) {
-    if (!requester || requester.role !== 'admin') {
-      throw new Error('Apenas admin pode definir role');
-    }
-    role = payload.role;
-  }
-
-  const senhaHash = await bcrypt.hash(payload.senha, 10);
-
-  const user = await User.create({ ...payload, role, senha: senhaHash });
-  return user;
-};
-
-const login = async ({ email, senha }) => {
-  const user = await User.findOne({ email });
-  if (!user) throw new Error('Credenciais inválidas');
-
-  const match = await bcrypt.compare(senha, user.senha);
-  if (!match) throw new Error('Credenciais inválidas');
 
   const accessToken = generateAccessToken({ id: user._id, role: user.role });
   const refreshToken = generateRefreshToken({ id: user._id });
 
   const decoded = jwt.decode(refreshToken);
+
   await RefreshToken.create({
     user: user._id,
     token: refreshToken,
@@ -114,11 +102,11 @@ const refresh = async (token) => {
     throw new HttpError(401, 'Usuário inválido para refresh token');
   }
 
-  if (!stored) throw new Error('Refresh token inválido');
+  const accessToken = generateAccessToken({
+    id: stored.user._id,
+    role: stored.user.role,
+  });
 
-  jwt.verify(token, env.jwtRefreshSecret);
-
-  const accessToken = generateAccessToken({ id: stored.user._id, role: stored.user.role });
   return { accessToken };
 };
 
