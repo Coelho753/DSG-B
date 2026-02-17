@@ -43,6 +43,7 @@ src/
 ## Scripts npm
 - `npm run dev`
 - `npm start`
+- `npm run check:syntax`
 
 ## Variáveis de ambiente
 Copie `.env.example` para `.env` e ajuste:
@@ -53,11 +54,33 @@ Copie `.env.example` para `.env` e ajuste:
 - `JWT_ACCESS_EXPIRES_IN`
 - `JWT_REFRESH_EXPIRES_IN`
 - `UPLOAD_DIR` (ex.: `uploads`)
-- `UPLOAD_DIR`
+- `BOOTSTRAP_ADMIN_TOKEN` (usado para criar o primeiro admin)
 
 ## Endpoints principais
-- Auth: `/api/auth/register`, `/api/auth/login`, `/api/auth/refresh-token`
+- Auth: `/api/auth/register`, `/api/auth/bootstrap-admin`, `/api/auth/login`, `/api/auth/refresh-token`
 - Usuário: `/api/users/me`, `/api/users/:id/role`
 - Categorias: `/api/categories`
 - Produtos: `/api/products`
 - Pedidos: `/api/orders`, `/api/orders/my-orders`
+
+
+- Guia rápido de ativação do primeiro admin: `SETUP_ADMIN.md`
+
+## Dica de deploy
+Execute `npm run check:syntax` antes do deploy para evitar falhas de inicialização por erro de sintaxe.
+
+
+## Como criar o primeiro administrador
+1. Defina `BOOTSTRAP_ADMIN_TOKEN` no `.env`.
+2. Faça `POST /api/auth/bootstrap-admin` com os dados do usuário e token no header `x-bootstrap-token` (ou `bootstrapToken` no body).
+3. Esse endpoint só funciona se **ainda não existir** usuário com role `admin`.
+
+Exemplo de body:
+```json
+{
+  "nome": "Admin",
+  "email": "admin@dsg.com",
+  "senha": "123456",
+  "bootstrapToken": "SEU_TOKEN"
+}
+```

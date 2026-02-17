@@ -32,45 +32,52 @@ const normalizeRegisterPayload = (payload = {}) => ({
   endereco: normalizeAddress(payload),
   idioma: payload.idioma || payload.language,
   tema: payload.tema || payload.theme,
-  ativo: payload.ativo ?? true,
+  ativo: payload.ativo,
 });
 
-const register = async (payload, requester) => {
+const createUserWithRole = async (payload, role) => {
   const normalized = normalizeRegisterPayload(payload);
-
-  if (!normalized.email || !normalized.senha) {
-    throw new HttpError(400, 'Email e senha são obrigatórios');
-  }
 
   const emailExists = await User.findOne({ email: normalized.email });
   if (emailExists) throw new HttpError(409, 'Email já cadastrado');
 
+  const senhaHash = await bcrypt.hash(normalized.senha, 10);
+  const user = await User.create({ ...normalized, role, senha: senhaHash });
+  return user;
+};
+
+const register = async (payload, requester) => {
   let role = 'user';
-  if (normalized.role) {
+  if (payload.role) {
     if (!requester || requester.role !== 'admin') {
       throw new HttpError(403, 'Apenas admin pode definir role');
     }
-    role = normalized.role;
+    role = payload.role;
   }
 
-  const senhaHash = await bcrypt.hash(normalized.senha, 10);
+  return createUserWithRole(payload, role);
+};
 
-  const user = await User.create({
-    ...normalized,
-    role,
-    senha: senhaHash,
-  });
+const bootstrapAdmin = async (payload, bootstrapToken) => {
+  if (!env.bootstrapAdminToken) {
+    throw new HttpError(403, 'BOOTSTRAP_ADMIN_TOKEN não configurado no servidor');
+  }
 
-  return user;
+  if (!bootstrapToken || bootstrapToken !== env.bootstrapAdminToken) {
+    throw new HttpError(403, 'Token de bootstrap inválido');
+  }
+
+  const adminExists = await User.exists({ role: 'admin' });
+  if (adminExists) {
+    throw new HttpError(409, 'Já existe um administrador. Use /auth/register/admin com conta admin logada');
+  }
+
+  return createUserWithRole(payload, 'admin');
 };
 
 const login = async ({ email, userEmail, senha, password }) => {
   const resolvedPassword = senha || password;
   const resolvedEmail = (email || userEmail || '').toLowerCase().trim();
-
-  if (!resolvedEmail || !resolvedPassword) {
-    throw new HttpError(400, 'Email e senha são obrigatórios');
-  }
 
   const user = await User.findOne({ email: resolvedEmail });
   if (!user) throw new HttpError(401, 'Credenciais inválidas');
@@ -82,7 +89,6 @@ const login = async ({ email, userEmail, senha, password }) => {
   const refreshToken = generateRefreshToken({ id: user._id });
 
   const decoded = jwt.decode(refreshToken);
-
   await RefreshToken.create({
     user: user._id,
     token: refreshToken,
@@ -102,16 +108,13 @@ const refresh = async (token) => {
     throw new HttpError(401, 'Usuário inválido para refresh token');
   }
 
-  const accessToken = generateAccessToken({
-    id: stored.user._id,
-    role: stored.user.role,
-  });
-
+  const accessToken = generateAccessToken({ id: stored.user._id, role: stored.user.role });
   return { accessToken };
 };
 
 module.exports = {
   register,
+  bootstrapAdmin,
   login,
   refresh,
 };

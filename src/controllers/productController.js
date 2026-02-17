@@ -2,19 +2,15 @@ const Product = require('../models/Product');
 const slugify = require('../utils/slugify');
 const { calculateFinalPrice } = require('../services/promotionService');
 
-/* ================= NORMALIZER ================= */
-
 const normalizeProductPayload = (body = {}) => ({
   nome: body.nome || body.name,
   descricao: body.descricao || body.description,
-  preco: body.preco ?? body.price,
-  estoque: body.estoque ?? body.stock,
+  preco: Number(body.preco ?? body.price),
+  estoque: Number(body.estoque ?? body.stock),
   categoria: body.categoria || body.category || body.categoryId,
   ativo: body.ativo,
   promocao: body.promocao,
 });
-
-/* ================= CREATE ================= */
 
 const createProduct = async (req, res, next) => {
   try {
@@ -34,33 +30,16 @@ const createProduct = async (req, res, next) => {
   }
 };
 
-/* ================= UPDATE ================= */
-
 const updateProduct = async (req, res, next) => {
   try {
     const payload = normalizeProductPayload(req.body);
+    Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
 
-    Object.keys(payload).forEach(
-      (key) => payload[key] === undefined && delete payload[key]
-    );
+    if (payload.nome) payload.slug = slugify(payload.nome);
+    if (req.files?.length) payload.imagens = req.files.map((file) => file.path);
 
-    if (payload.nome) {
-      payload.slug = slugify(payload.nome);
-    }
-
-    if (req.files?.length) {
-      payload.imagens = req.files.map((file) => file.path);
-    }
-
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      payload,
-      { new: true, runValidators: true }
-    );
-
-    if (!product) {
-      return res.status(404).json({ message: 'Produto não encontrado' });
-    }
+    const product = await Product.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
+    if (!product) return res.status(404).json({ message: 'Produto não encontrado' });
 
     return res.json(product);
   } catch (error) {
@@ -68,29 +47,17 @@ const updateProduct = async (req, res, next) => {
   }
 };
 
-/* ================= GET ONE ================= */
-
 const getProductById = async (req, res, next) => {
   try {
-    const product = await Product.findById(req.params.id)
-      .populate('categoria criadoPor', 'nome email');
-
-    if (!product) {
-      return res.status(404).json({ message: 'Produto não encontrado' });
-    }
+    const product = await Product.findById(req.params.id).populate('categoria criadoPor', 'nome email');
+    if (!product) return res.status(404).json({ message: 'Produto não encontrado' });
 
     const pricing = calculateFinalPrice(product);
-
-    return res.json({
-      ...product.toObject(),
-      ...pricing,
-    });
+    return res.json({ ...product.toObject(), ...pricing });
   } catch (error) {
     return next(error);
   }
 };
-
-/* ================= LIST ================= */
 
 const getProducts = async (req, res, next) => {
   try {
@@ -118,20 +85,12 @@ const getProducts = async (req, res, next) => {
     const resolvedMaxPrice = precoMax ?? maxPrice;
     const resolvedSort = sort || ordenacao;
 
-    if (resolvedCategory) {
-      filter.categoria = resolvedCategory;
-    }
-
+    if (resolvedCategory) filter.categoria = resolvedCategory;
     if (resolvedMinPrice || resolvedMaxPrice) {
       filter.preco = {};
-      if (resolvedMinPrice) {
-        filter.preco.$gte = Number(resolvedMinPrice);
-      }
-      if (resolvedMaxPrice) {
-        filter.preco.$lte = Number(resolvedMaxPrice);
-      }
+      if (resolvedMinPrice) filter.preco.$gte = Number(resolvedMinPrice);
+      if (resolvedMaxPrice) filter.preco.$lte = Number(resolvedMaxPrice);
     }
-
     if (resolvedSearch) {
       filter.$or = [
         { nome: { $regex: resolvedSearch, $options: 'i' } },
@@ -142,7 +101,7 @@ const getProducts = async (req, res, next) => {
     const sortMap = {
       precoAsc: { preco: 1 },
       precoDesc: { preco: -1 },
-      maisRecentes: { createdAt: -1 },
+      maisRecentes: { criadoEm: -1 },
       maisVendidos: { totalVendido: -1 },
     };
 
@@ -174,16 +133,10 @@ const getProducts = async (req, res, next) => {
   }
 };
 
-/* ================= DELETE ================= */
-
 const deleteProduct = async (req, res, next) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
-
-    if (!product) {
-      return res.status(404).json({ message: 'Produto não encontrado' });
-    }
-
+    if (!product) return res.status(404).json({ message: 'Produto não encontrado' });
     return res.json({ message: 'Produto removido com sucesso' });
   } catch (error) {
     return next(error);

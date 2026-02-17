@@ -12,6 +12,21 @@ const register = async (req, res, next) => {
   }
 };
 
+const bootstrapAdmin = async (req, res, next) => {
+  try {
+    const headerToken = req.headers['x-bootstrap-token'];
+    const bodyToken = req.body.bootstrapToken;
+
+    const user = await authService.bootstrapAdmin(req.body, headerToken || bodyToken);
+    return res.status(201).json({
+      message: 'Administrador criado com sucesso',
+      user: { id: user._id, nome: user.nome, email: user.email, role: user.role },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const login = async (req, res, next) => {
   try {
     const { accessToken, refreshToken, user } = await authService.login(req.body);
@@ -36,6 +51,7 @@ const refreshToken = async (req, res, next) => {
 
 module.exports = {
   register,
+  bootstrapAdmin,
   login,
   refreshToken,
 };
