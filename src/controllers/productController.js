@@ -3,6 +3,28 @@ const slugify = require('../utils/slugify');
 const { calculateFinalPrice } = require('../services/promotionService');
 const { logAdminAction } = require('../services/auditService');
 
+const asNumber = (value, fallback = 0) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const serializeProduct = (productDoc) => {
+  const product = productDoc.toObject ? productDoc.toObject() : productDoc;
+  const pricing = calculateFinalPrice(product);
+  const preco = asNumber(product.preco, 0);
+  const precoPromocional = product.precoPromocional === undefined ? null : asNumber(product.precoPromocional, null);
+
+  return {
+    ...product,
+    ...pricing,
+    estoqueBaixo: asNumber(product.estoque, 0) <= 5,
+    // aliases para compatibilidade com frontend
+    price: preco,
+    finalPrice: asNumber(pricing.precoFinal, 0),
+    promoPrice: precoPromocional,
+  };
+};
+
 const normalizeProductPayload = (body = {}) => ({
   nome: body.nome || body.name,
   descricao: body.descricao || body.shortDescription || body.description,
@@ -69,8 +91,7 @@ const getProductById = async (req, res, next) => {
     const product = await Product.findById(req.params.id).populate('categoria subcategoria criadoPor', 'nome email');
     if (!product) return res.status(404).json({ message: 'Produto não encontrado' });
 
-    const pricing = calculateFinalPrice(product);
-    return res.json({ ...product.toObject(), ...pricing, estoqueBaixo: product.estoque <= 5 });
+    return res.json(serializeProduct(product));
   } catch (error) {
     return next(error);
   }
@@ -141,11 +162,7 @@ const getProducts = async (req, res, next) => {
         .limit(perPage),
     ]);
 
-    const productsWithFinalPrice = products.map((p) => ({
-      ...p.toObject(),
-      ...calculateFinalPrice(p),
-      estoqueBaixo: p.estoque <= 5,
-    }));
+    const productsWithFinalPrice = products.map((p) => serializeProduct(p));
 
     return res.json({
       totalItems,
