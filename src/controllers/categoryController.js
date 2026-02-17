@@ -2,15 +2,29 @@ const Category = require('../models/Category');
 const slugify = require('../utils/slugify');
 const { logAdminAction } = require('../services/auditService');
 
+const normalizeCategoryPayload = (body = {}) => {
+  const statusRaw = body.status;
+  const statusAsAtivo =
+    statusRaw === undefined
+      ? undefined
+      : ['ativo', 'active', true, 'true', 1, '1'].includes(statusRaw);
+
+  return {
+    nome: body.nome || body.name,
+    parent: body.parent || body.parentId || null,
+    icone: body.icone || body.icon,
+    ordemExibicao: body.ordemExibicao ?? body.displayOrder,
+    ativo: body.ativo ?? statusAsAtivo,
+  };
+};
+
 const createCategory = async (req, res, next) => {
   try {
+    const normalized = normalizeCategoryPayload(req.body);
+
     const category = await Category.create({
-      nome: req.body.nome,
-      slug: slugify(req.body.nome),
-      parent: req.body.parent || null,
-      icone: req.body.icone,
-      ordemExibicao: req.body.ordemExibicao,
-      ativo: req.body.ativo,
+      ...normalized,
+      slug: slugify(normalized.nome),
       criadaPor: req.user._id,
     });
     await logAdminAction({ req, action: 'create', resource: 'category', resourceId: category._id, payload: req.body });
@@ -22,7 +36,13 @@ const createCategory = async (req, res, next) => {
 
 const getCategories = async (req, res, next) => {
   try {
-    const categories = await Category.find().populate('parent', 'nome slug').sort({ ordemExibicao: 1, criadaEm: -1 });
+    const filter = {};
+    if (req.query.status === 'ativo' || req.query.status === 'active') filter.ativo = true;
+    if (req.query.status === 'inativo' || req.query.status === 'inactive') filter.ativo = false;
+
+    const categories = await Category.find(filter)
+      .populate('parent', 'nome slug')
+      .sort({ ordemExibicao: 1, criadaEm: -1 });
     return res.json(categories);
   } catch (error) {
     return next(error);
@@ -41,7 +61,10 @@ const getCategoryById = async (req, res, next) => {
 
 const updateCategory = async (req, res, next) => {
   try {
-    const payload = { ...req.body };
+    const normalized = normalizeCategoryPayload(req.body);
+    const payload = { ...normalized };
+    Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
+
     if (payload.nome) payload.slug = slugify(payload.nome);
 
     const category = await Category.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
