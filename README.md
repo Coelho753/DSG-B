@@ -43,7 +43,6 @@ src/
 ## Scripts npm
 - `npm run dev`
 - `npm start`
-- `npm run check:syntax`
 
 ## Variáveis de ambiente
 Copie `.env.example` para `.env` e ajuste:
@@ -54,6 +53,7 @@ Copie `.env.example` para `.env` e ajuste:
 - `JWT_ACCESS_EXPIRES_IN`
 - `JWT_REFRESH_EXPIRES_IN`
 - `UPLOAD_DIR` (ex.: `uploads`)
+- `UPLOAD_DIR`
 
 ## Endpoints principais
 - Auth: `/api/auth/register`, `/api/auth/login`, `/api/auth/refresh-token`
@@ -61,7 +61,3 @@ Copie `.env.example` para `.env` e ajuste:
 - Categorias: `/api/categories`
 - Produtos: `/api/products`
 - Pedidos: `/api/orders`, `/api/orders/my-orders`
-
-
-## Dica de deploy
-Execute `npm run check:syntax` antes do deploy para evitar falhas de inicialização por erro de sintaxe.

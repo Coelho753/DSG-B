@@ -26,6 +26,10 @@ const registerValidator = [
   }),
   body('email').optional().isEmail().withMessage('Email inválido').normalizeEmail(),
   body('userEmail').optional().isEmail().withMessage('Email inválido').normalizeEmail(),
+const registerValidator = [
+  body('nome').isLength({ min: 2 }).withMessage('Nome deve ter ao menos 2 caracteres'),
+  body('email').isEmail().withMessage('Email inválido').normalizeEmail(),
+  body('senha').isLength({ min: 6 }).withMessage('Senha deve ter ao menos 6 caracteres'),
   body('role').optional().isIn(['user', 'admin', 'distribuidor', 'revendedor']),
 ];
 
@@ -43,6 +47,8 @@ const loginValidator = [
   }),
   body('email').optional().isEmail().withMessage('Email inválido').normalizeEmail(),
   body('userEmail').optional().isEmail().withMessage('Email inválido').normalizeEmail(),
+  body('email').isEmail().withMessage('Email inválido').normalizeEmail(),
+  body('senha').notEmpty().withMessage('Senha é obrigatória'),
 ];
 
 const refreshTokenValidator = [

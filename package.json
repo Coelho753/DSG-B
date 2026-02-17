@@ -7,8 +7,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "lint": "echo 'Configure um linter (ESLint) conforme necessidade'",
-    "check:syntax": "node scripts/checkSyntax.js"
+    "lint": "echo 'Configure um linter (ESLint) conforme necessidade'"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
