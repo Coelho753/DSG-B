@@ -34,6 +34,7 @@ frontend/src/
 - Dashboard com métricas de produtos e vendas do mês.
 - Upload múltiplo com compressão de imagens.
 - JWT + role middleware + sanitização + rate limit + logs HTTP.
+- Auth middleware aceita tokens via `Authorization: Bearer`, `Authorization: Token`, header `x-access-token` e `?token=` para compatibilidade legada.
 - Validação com `express-validator` e `zod`.
 
 ## Endpoints principais
