@@ -9,9 +9,11 @@ const { productValidator } = require('../validators/productValidator');
 
 const router = express.Router();
 
-router.get('/', authMiddleware, authorizeRoles('admin', 'seller'), productController.getProducts);
-router.get('/:id', authMiddleware, authorizeRoles('admin', 'seller'), productController.getProductById);
+// Público: listagem e detalhe de produtos
+router.get('/', productController.getProducts);
+router.get('/:id', productController.getProductById);
 
+// Privado: gestão de produtos
 router.post(
   '/',
   authMiddleware,
