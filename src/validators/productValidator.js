@@ -6,11 +6,15 @@ const productValidator = [
     const preco = req.body.preco ?? req.body.price;
     const estoque = req.body.estoque ?? req.body.stock;
     const categoria = req.body.categoria || req.body.category || req.body.categoryId;
+    const imageUrl = req.body.imageUrl || req.body.image || req.body.imagem;
+    const uploadedImageCount = req.files?.length || 0;
 
     if (!nome || String(nome).trim().length < 2) throw new Error('Nome é obrigatório');
     if (Number.isNaN(Number(preco)) || Number(preco) < 0) throw new Error('Preço inválido');
+    if (req.body.cost !== undefined && (Number.isNaN(Number(req.body.cost)) || Number(req.body.cost) < 0)) throw new Error('Custo inválido');
     if (!Number.isInteger(Number(estoque)) || Number(estoque) < 0) throw new Error('Estoque inválido');
     if (!categoria) throw new Error('Categoria é obrigatória');
+    if (req.method === 'POST' && !imageUrl && uploadedImageCount === 0) throw new Error('Imagem do produto é obrigatória');
 
     return true;
   }),

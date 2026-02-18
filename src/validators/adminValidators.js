@@ -3,16 +3,12 @@ const { z } = require('zod');
 const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/);
 
 const promotionSchema = z.object({
-  nome: z.string().min(2),
-  codigo: z.string().optional(),
-  tipo: z.enum(['percentual', 'fixo', 'cupom']),
-  valor: z.number().nonnegative(),
-  dataInicio: z.string().datetime(),
-  dataFim: z.string().datetime(),
-  ativa: z.boolean().optional(),
-  aplicavelEm: z.enum(['produto', 'categoria', 'global']),
-  produto: objectId.optional(),
-  categoria: objectId.optional(),
+  title: z.string().min(2),
+  discountPercentage: z.number().min(1).max(100),
+  productId: objectId,
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+  active: z.boolean().optional(),
 });
 
 const settingsSchema = z.object({

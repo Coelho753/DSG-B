@@ -2,6 +2,12 @@ const Category = require('../models/Category');
 const slugify = require('../utils/slugify');
 const { logAdminAction } = require('../services/auditService');
 
+
+const serializeCategory = (category) => {
+  const c = category.toObject ? category.toObject() : category;
+  return { ...c, name: c.nome };
+};
+
 const normalizeCategoryPayload = (body = {}) => {
   const statusRaw = body.status;
   const statusAsAtivo =
@@ -28,7 +34,7 @@ const createCategory = async (req, res, next) => {
       criadaPor: req.user._id,
     });
     await logAdminAction({ req, action: 'create', resource: 'category', resourceId: category._id, payload: req.body });
-    return res.status(201).json(category);
+    return res.status(201).json(serializeCategory(category));
   } catch (error) {
     return next(error);
   }
@@ -43,7 +49,7 @@ const getCategories = async (req, res, next) => {
     const categories = await Category.find(filter)
       .populate('parent', 'nome slug')
       .sort({ ordemExibicao: 1, criadaEm: -1 });
-    return res.json(categories);
+    return res.json(categories.map(serializeCategory));
   } catch (error) {
     return next(error);
   }
@@ -53,7 +59,7 @@ const getCategoryById = async (req, res, next) => {
   try {
     const category = await Category.findById(req.params.id).populate('parent', 'nome slug');
     if (!category) return res.status(404).json({ message: 'Categoria não encontrada' });
-    return res.json(category);
+    return res.json(serializeCategory(category));
   } catch (error) {
     return next(error);
   }
@@ -70,7 +76,7 @@ const updateCategory = async (req, res, next) => {
     const category = await Category.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
     if (!category) return res.status(404).json({ message: 'Categoria não encontrada' });
     await logAdminAction({ req, action: 'update', resource: 'category', resourceId: category._id, payload: req.body });
-    return res.json(category);
+    return res.json(serializeCategory(category));
   } catch (error) {
     return next(error);
   }

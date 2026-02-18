@@ -10,6 +10,7 @@ export function useCart() {
     try {
       const { data } = await api.get('/cart');
       setCart(data);
+      return data;
     } finally {
       setLoading(false);
     }

@@ -47,6 +47,7 @@ const productSchema = new mongoose.Schema({
   dimensoes: { type: dimensoesSchema, default: {} },
   categoria: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true, index: true },
   categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', index: true },
+  imageUrl: { type: String, required: true, trim: true },
   subcategoria: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', index: true },
   imagens: [{ type: String }],
   images: [{ type: String }],
@@ -70,6 +71,9 @@ productSchema.pre('save', function updateTimestamp(next) {
   if (this.stock === undefined) this.stock = this.estoque;
   if (!this.categoryId) this.categoryId = this.categoria;
   if (!this.images?.length && this.imagens?.length) this.images = this.imagens;
+  if (!this.imageUrl) {
+    this.imageUrl = this.images?.[0] || this.imagens?.[0] || '';
+  }
   next();
 });
 

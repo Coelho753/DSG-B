@@ -33,6 +33,8 @@ router.put(
   authorizeRoles('admin', 'seller'),
   upload.array('imagens', 10),
   compressUploadedImages,
+  productValidator,
+  validateRequest,
   productController.updateProduct
 );
 

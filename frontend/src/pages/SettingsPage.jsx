@@ -1,28 +1,41 @@
 import { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import { useToast } from '../hooks/useToast';
 
 export default function SettingsPage() {
+  const toast = useToast();
   const [profile, setProfile] = useState({ address: {}, themePreference: 'light' });
   const { theme, setTheme, toggleTheme } = useTheme();
 
   useEffect(() => {
-    api.get('/users/profile').then(({ data }) => {
-      setProfile(data);
-      if (data.themePreference) setTheme(data.themePreference);
-    });
-  }, [setTheme]);
+    const loadProfile = async () => {
+      try {
+        const { data } = await api.get('/users/profile');
+        setProfile(data);
+        if (data.themePreference) setTheme(data.themePreference);
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Erro ao carregar perfil');
+      }
+    };
+
+    loadProfile();
+  }, [setTheme, toast]);
 
   const save = async () => {
-    const { data } = await api.put('/users/profile', { address: profile.address, themePreference: theme });
-    setProfile(data.user);
-    window.alert('Perfil salvo');
+    try {
+      const { data } = await api.put('/users/profile', { address: profile.address, themePreference: theme });
+      setProfile(data.user);
+      toast.success('Perfil salvo');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Erro ao salvar perfil');
+    }
   };
 
   return (
     <div style={{ maxWidth: 700, display: 'grid', gap: 12 }}>
       <h2>Settings</h2>
-      <button onClick={toggleTheme}>Alternar tema ({theme})</button>
+      <button type="button" onClick={toggleTheme}>Alternar tema ({theme})</button>
 
       <h3>Endereço</h3>
       <input placeholder="Rua" value={profile.address?.street || ''} onChange={(e) => setProfile({ ...profile, address: { ...profile.address, street: e.target.value } })} />
@@ -32,7 +45,7 @@ export default function SettingsPage() {
       <input placeholder="CEP" value={profile.address?.zipCode || ''} onChange={(e) => setProfile({ ...profile, address: { ...profile.address, zipCode: e.target.value } })} />
       <input placeholder="Complemento" value={profile.address?.complement || ''} onChange={(e) => setProfile({ ...profile, address: { ...profile.address, complement: e.target.value } })} />
 
-      <button onClick={save}>Salvar perfil</button>
+      <button type="button" onClick={save}>Salvar perfil</button>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const Category = require('../models/Category');
 const slugify = require('../utils/slugify');
 const { calculateFinalPrice } = require('../services/promotionService');
 const { logAdminAction } = require('../services/auditService');
@@ -22,6 +23,7 @@ const serializeProduct = (productDoc) => {
     price: preco,
     finalPrice: asNumber(pricing.precoFinal, 0),
     promoPrice: precoPromocional,
+    imageUrl: product.imageUrl || product.images?.[0] || product.imagens?.[0] || '',
   };
 };
 
@@ -38,6 +40,8 @@ const normalizeProductPayload = (body = {}) => ({
   peso: body.peso !== undefined ? Number(body.peso) : undefined,
   dimensoes: body.dimensoes,
   categoria: body.categoria || body.category || body.categoryId,
+  categoryId: body.categoryId || body.categoria || body.category,
+  imageUrl: body.imageUrl || body.image || body.imagem,
   subcategoria: body.subcategoria || body.subcategory || body.subcategoryId,
   variacoes: body.variacoes || body.variations,
   destaque: body.destaque ?? body.featured,
@@ -52,10 +56,22 @@ const createProduct = async (req, res, next) => {
     const imagePaths = (req.files || []).map((file) => file.path);
     const normalized = normalizeProductPayload(req.body);
 
+    normalized.preco = Number(normalized.preco);
+    normalized.cost = Number(normalized.cost ?? 0);
+    normalized.estoque = Number(normalized.estoque);
+    if ([normalized.preco, normalized.cost, normalized.estoque].some((n) => Number.isNaN(n))) {
+      return res.status(400).json({ message: 'Campos numéricos inválidos (preço/custo/estoque)' });
+    }
+
+    const imageUrl = normalized.imageUrl || imagePaths[0];
+    if (!imageUrl) return res.status(400).json({ message: 'imageUrl ou upload de imagem é obrigatório' });
+
     const product = await Product.create({
       ...normalized,
       slug: slugify(normalized.nome),
       imagens: imagePaths,
+      images: imagePaths,
+      imageUrl,
       criadoPor: req.user._id,
     });
 
@@ -75,8 +91,19 @@ const updateProduct = async (req, res, next) => {
     const payload = normalizeProductPayload(req.body);
     Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
 
+    if (payload.preco !== undefined) payload.preco = Number(payload.preco);
+    if (payload.cost !== undefined) payload.cost = Number(payload.cost);
+    if (payload.estoque !== undefined) payload.estoque = Number(payload.estoque);
+    if ([payload.preco, payload.cost, payload.estoque].some((n) => n !== undefined && Number.isNaN(n))) {
+      return res.status(400).json({ message: 'Campos numéricos inválidos (preço/custo/estoque)' });
+    }
+
     if (payload.nome) payload.slug = slugify(payload.nome);
-    if (req.files?.length) payload.imagens = req.files.map((file) => file.path);
+    if (req.files?.length) {
+      payload.imagens = req.files.map((file) => file.path);
+      payload.images = payload.imagens;
+      if (!payload.imageUrl) payload.imageUrl = payload.imagens[0];
+    }
 
     const product = await Product.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
 
@@ -136,9 +163,12 @@ const getProducts = async (req, res, next) => {
       if (resolvedMaxPrice) filter.preco.$lte = Number(resolvedMaxPrice);
     }
     if (resolvedSearch) {
+      const categories = await Category.find({ nome: { $regex: resolvedSearch, $options: 'i' } }).select('_id');
+      const categoryIds = categories.map((c) => c._id);
       filter.$or = [
         { nome: { $regex: resolvedSearch, $options: 'i' } },
         { descricao: { $regex: resolvedSearch, $options: 'i' } },
+        { categoria: { $in: categoryIds } },
       ];
     }
 
