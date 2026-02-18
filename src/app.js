@@ -14,6 +14,8 @@ const promotionRoutes = require('./routes/promotionRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const auditRoutes = require('./routes/auditRoutes');
+const cartRoutes = require('./routes/cartRoutes');
+const adminNotificationRoutes = require('./routes/adminNotificationRoutes');
 const sanitizeInput = require('./middlewares/sanitizeInput');
 const apiLimiter = require('./middlewares/rateLimiter');
 const errorHandler = require('./middlewares/errorHandler');
@@ -40,10 +42,12 @@ app.use('/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/cart', cartRoutes);
 app.use('/api/promotions', promotionRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit-logs', auditRoutes);
+app.use('/api/admin/notifications', adminNotificationRoutes);
 
 app.use(errorHandler);
 

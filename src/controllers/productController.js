@@ -31,6 +31,7 @@ const normalizeProductPayload = (body = {}) => ({
   descricaoDetalhada: body.descricaoDetalhada || body.longDescription || body.richDescription,
   preco: Number(body.preco ?? body.price),
   precoPromocional: body.precoPromocional !== undefined ? Number(body.precoPromocional) : undefined,
+  cost: body.cost !== undefined ? Number(body.cost) : undefined,
   estoque: Number(body.estoque ?? body.stock),
   sku: body.sku,
   marca: body.marca || body.brand,

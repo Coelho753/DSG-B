@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../services/api';
+import ProductCardExpandable from '../components/ProductCardExpandable';
+import { useCart } from '../hooks/useCart';
 
 export default function ProductsPage() {
   const [items, setItems] = useState([]);
@@ -7,6 +9,7 @@ export default function ProductsPage() {
   const [categoria, setCategoria] = useState('');
   const [status, setStatus] = useState('');
   const [sort, setSort] = useState('maisRecentes');
+  const { add, cart } = useCart();
 
   const load = async () => {
     const { data } = await api.get('/products', { params: { search: q, categoryId: categoria, status, sort } });
@@ -30,12 +33,13 @@ export default function ProductsPage() {
         <select value={sort} onChange={(e) => setSort(e.target.value)}><option value="precoAsc">Preço ↑</option><option value="precoDesc">Preço ↓</option><option value="maisRecentes">Recentes</option></select>
         <button onClick={load}>Filtrar</button>
       </div>
+      <div style={{ marginBottom: 8 }}>Itens no carrinho: {cart.items?.reduce((a, i) => a + i.quantity, 0) || 0}</div>
       <table width="100%" border="1" cellPadding="6">
         <thead><tr><th>Nome</th><th>Preço</th><th>Status</th><th>Estoque</th><th>Ações</th></tr></thead>
         <tbody>
           {items.map((p) => (
             <tr key={p._id}>
-              <td>{p.nome}</td><td>{p.precoFinal}</td><td>{p.ativo ? 'Ativo' : 'Inativo'}</td>
+              <td><ProductCardExpandable product={p} onAddToCart={(prod) => add(prod._id, 1)} /></td><td>{p.precoFinal}</td><td>{p.ativo ? 'Ativo' : 'Inativo'}</td>
               <td style={{ color: p.estoqueBaixo ? 'red' : 'inherit' }}>{p.estoque}</td>
               <td>
                 <button onClick={() => toggleStatus(p)}>Toggle</button>

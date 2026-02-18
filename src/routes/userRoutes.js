@@ -8,6 +8,9 @@ const validateRequest = require('../middlewares/validateRequest');
 const router = express.Router();
 
 router.get('/me', authMiddleware, userController.getProfile);
+router.get('/profile', authMiddleware, userController.getUserProfile);
+router.put('/profile', authMiddleware, userController.updateUserProfile);
+
 router.patch(
   '/:id/role',
   authMiddleware,

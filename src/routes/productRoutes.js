@@ -6,12 +6,14 @@ const upload = require('../middlewares/uploadMiddleware');
 const compressUploadedImages = require('../middlewares/imageCompressionMiddleware');
 const validateRequest = require('../middlewares/validateRequest');
 const { productValidator } = require('../validators/productValidator');
+const reviewRoutes = require('./reviewRoutes');
 
 const router = express.Router();
 
 // Público: listagem e detalhe de produtos
 router.get('/', productController.getProducts);
 router.get('/:id', productController.getProductById);
+router.use('/:id/reviews', reviewRoutes);
 
 // Privado: gestão de produtos
 router.post(

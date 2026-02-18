@@ -1,6 +1,6 @@
-# Marketplace Backend + Painel Administrativo (Node/Express/Mongo + React)
+# Marketplace Backend + Admin Panel
 
-## Estrutura de pastas
+## Estrutura
 
 ### Backend
 ```txt
@@ -15,68 +15,43 @@ src/
   validators/
 ```
 
-### Frontend (painel admin)
+### Frontend
 ```txt
 frontend/src/
-  pages/
   components/
-  hooks/
-  services/
   context/
+  hooks/
+  pages/
+  services/
 ```
 
-## Recursos implementados
-- Publicação e gerenciamento de produtos (admin/seller).
-- CRUD de categorias com suporte a categoria pai.
-- CRUD de promoções com regras de validade e conflito.
-- Configurações administrativas persistidas em `settings`.
-- Auditoria administrativa (`audit_logs`).
-- Dashboard com métricas de produtos e vendas do mês.
-- Upload múltiplo com compressão de imagens.
-- JWT + role middleware + sanitização + rate limit + logs HTTP.
-- Auth middleware aceita tokens via `Authorization: Bearer`, `Authorization: Token`, header `x-access-token` e `?token=` para compatibilidade legada.
-- Validação com `express-validator` e `zod`.
+## Funcionalidades implementadas
+- Card de produto expansível com modal/drawer, avaliações, frete mock e adicionar ao carrinho.
+- Sistema de avaliações por produto (`rating`, `comment`, `userId`, `createdAt`).
+- Carrinho real (modelo + endpoints de add/update/remove/clear/get).
+- Checkout do carrinho gerando Order com `totalPaid`, `profit`, `paidAt` e notificação admin de venda.
+- Notificações admin via `GET /api/admin/notifications`.
+- Perfil de usuário com endereço salvo e preferência de tema (`GET/PUT /api/users/profile`).
+- Tema global (`light` e `dark-gold`) no frontend com persistência em localStorage.
+- CRUD de produtos/categorias com proteção por role e compatibilidade de payload.
 
-## Endpoints principais
-- Auth: `POST /api/auth/register`, `POST /api/auth/bootstrap-admin`, `POST /api/auth/login`
-- Produtos: `POST /api/products`, `PUT /api/products/:id`, `DELETE /api/products/:id`, `GET /api/products`
-- Categorias: `POST /api/categories`, `PUT /api/categories/:id`, `DELETE /api/categories/:id`, `GET /api/categories`
-- Promoções: `POST /api/promotions`, `PUT /api/promotions/:id`, `DELETE /api/promotions/:id`, `GET /api/promotions`
-- Settings: `GET /api/settings`, `PUT /api/settings`
-- Dashboard: `GET /api/dashboard/metrics`
-- Auditoria: `GET /api/audit-logs`
-- Compatibilidade de rota: também responde em `/categories` e `/products` (sem prefixo `/api`) para integrações legadas.
-
-## Exemplo de Model (MongoDB)
-```js
-const promotionSchema = new mongoose.Schema({
-  nome: String,
-  tipo: { type: String, enum: ['percentual', 'fixo', 'cupom'] },
-  valor: Number,
-  dataInicio: Date,
-  dataFim: Date,
-  aplicavelEm: { type: String, enum: ['produto', 'categoria', 'global'] },
-  ativa: Boolean,
-});
-```
-
-## Exemplo de Controller
-```js
-const getMetrics = async (req, res, next) => {
-  try {
-    const totalProdutos = await Product.countDocuments();
-    return res.json({ totalProdutos });
-  } catch (error) {
-    return next(error);
-  }
-};
-```
-
-## Exemplo de formulário React funcional
-Veja: `frontend/src/pages/ProductFormPage.jsx`.
-
-## Variáveis de ambiente
-Copie `.env.example` para `.env`.
+## Endpoints novos/relevantes
+- Reviews
+  - `GET /api/products/:id/reviews`
+  - `POST /api/products/:id/reviews`
+- Cart
+  - `GET /api/cart`
+  - `POST /api/cart/add`
+  - `PUT /api/cart/update`
+  - `DELETE /api/cart/remove`
+  - `DELETE /api/cart/clear`
+- Checkout / Orders
+  - `POST /api/orders/checkout`
+- Notificações admin
+  - `GET /api/admin/notifications`
+- Perfil
+  - `GET /api/users/profile`
+  - `PUT /api/users/profile`
 
 ## Scripts
 - `npm run dev`

@@ -12,6 +12,7 @@ export default function DashboardLayout() {
           <Link to="/admin/categories">Categorias</Link>
           <Link to="/admin/promotions">Promoções</Link>
           <Link to="/admin/settings">Configurações</Link>
+          <Link to="/cart">Carrinho</Link>
         </nav>
       </aside>
       <main style={{ padding: 20 }}>
