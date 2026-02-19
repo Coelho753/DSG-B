@@ -25,8 +25,8 @@ const getCart = async (req, res, next) => {
 
 const addToCart = async (req, res, next) => {
   try {
-    const productId = req.body.productId;
-    const quantity = Math.max(Number(req.body.quantity || 1), 1);
+    const productId = req.body.productId || req.body.id || req.body.product || req.body.product_id;
+    const quantity = Math.max(Number(req.body.quantity || req.body.qty || 1), 1);
 
     const product = await Product.findById(productId);
     if (!product || !product.ativo) return res.status(404).json({ message: 'Produto não encontrado' });
@@ -54,8 +54,8 @@ const addToCart = async (req, res, next) => {
 
 const updateCartItem = async (req, res, next) => {
   try {
-    const productId = req.body.productId;
-    const quantity = Number(req.body.quantity);
+    const productId = req.body.productId || req.body.id || req.body.product || req.body.product_id;
+    const quantity = Number(req.body.quantity ?? req.body.qty);
     if (!productId || !Number.isInteger(quantity) || quantity < 1) {
       return res.status(400).json({ message: 'productId e quantity >=1 são obrigatórios' });
     }
@@ -76,7 +76,7 @@ const updateCartItem = async (req, res, next) => {
 
 const removeCartItem = async (req, res, next) => {
   try {
-    const productId = req.body.productId || req.query.productId;
+    const productId = req.body.productId || req.query.productId || req.body.id || req.query.id || req.body.product || req.query.product;
     const cart = await ensureCart(req.user._id);
     cart.items = cart.items.filter((i) => String(i.productId) !== String(productId));
     cart.updatedAt = new Date();

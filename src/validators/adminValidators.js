@@ -2,13 +2,15 @@ const { z } = require('zod');
 
 const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/);
 
+const toNumber = z.preprocess((value) => Number(value), z.number());
+
 const promotionSchema = z.object({
   title: z.string().min(2),
-  discountPercentage: z.number().min(1).max(100),
+  discountPercentage: toNumber.min(1).max(100),
   productId: objectId,
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
-  active: z.boolean().optional(),
+  startDate: z.string().min(1),
+  endDate: z.string().min(1),
+  active: z.preprocess((value) => (value === 'false' ? false : Boolean(value)), z.boolean()).optional(),
 });
 
 const settingsSchema = z.object({

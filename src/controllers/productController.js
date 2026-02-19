@@ -53,7 +53,7 @@ const canManageProduct = (user, product) => user.role === 'admin' || String(prod
 
 const createProduct = async (req, res, next) => {
   try {
-    const imagePaths = (req.files || []).map((file) => file.path);
+    const imagePaths = (req.files || []).map((file) => `/uploads/${file.filename}`);
     const normalized = normalizeProductPayload(req.body);
 
     normalized.preco = Number(normalized.preco);
@@ -100,7 +100,7 @@ const updateProduct = async (req, res, next) => {
 
     if (payload.nome) payload.slug = slugify(payload.nome);
     if (req.files?.length) {
-      payload.imagens = req.files.map((file) => file.path);
+      payload.imagens = req.files.map((file) => `/uploads/${file.filename}`);
       payload.images = payload.imagens;
       if (!payload.imageUrl) payload.imageUrl = payload.imagens[0];
     }

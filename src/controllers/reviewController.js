@@ -22,14 +22,17 @@ const listReviews = async (req, res, next) => {
 
 const upsertReview = async (req, res, next) => {
   try {
-    const rating = Number(req.body.rating);
+    const rating = Number(req.body.rating ?? req.body.stars);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       return res.status(400).json({ message: 'rating deve ser entre 1 e 5' });
     }
 
+    const comment = (req.body.comment || req.body.message || '').trim();
+    const photoUrl = (req.body.photoUrl || req.body.photo || req.body.imageUrl || '').trim();
+
     const review = await Review.findOneAndUpdate(
       { productId: req.params.id, userId: req.user._id },
-      { rating, comment: req.body.comment || '' },
+      { rating, comment, message: comment, photoUrl },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 

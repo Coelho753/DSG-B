@@ -5,7 +5,7 @@ const authorizeRoles = require('../middlewares/roleMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
 const compressUploadedImages = require('../middlewares/imageCompressionMiddleware');
 const validateRequest = require('../middlewares/validateRequest');
-const { productValidator } = require('../validators/productValidator');
+const { productCreateValidator, productUpdateValidator } = require('../validators/productValidator');
 const reviewRoutes = require('./reviewRoutes');
 
 const router = express.Router();
@@ -20,9 +20,9 @@ router.post(
   '/',
   authMiddleware,
   authorizeRoles('admin', 'seller'),
-  upload.array('imagens', 10),
+  upload.any(),
   compressUploadedImages,
-  productValidator,
+  productCreateValidator,
   validateRequest,
   productController.createProduct
 );
@@ -31,9 +31,9 @@ router.put(
   '/:id',
   authMiddleware,
   authorizeRoles('admin', 'seller'),
-  upload.array('imagens', 10),
+  upload.any(),
   compressUploadedImages,
-  productValidator,
+  productUpdateValidator,
   validateRequest,
   productController.updateProduct
 );

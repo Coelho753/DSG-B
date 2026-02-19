@@ -5,6 +5,8 @@ const reviewSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   rating: { type: Number, required: true, min: 1, max: 5 },
   comment: { type: String, trim: true, default: '' },
+  message: { type: String, trim: true, default: '' },
+  photoUrl: { type: String, trim: true, default: '' },
   createdAt: { type: Date, default: Date.now, index: true },
 });
 
