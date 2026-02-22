@@ -1,5 +1,6 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import Footer from './Footer';
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export default function DashboardLayout() {
       </aside>
       <main style={{ padding: 20 }}>
         <Outlet />
+        <Footer />
       </main>
     </div>
   );

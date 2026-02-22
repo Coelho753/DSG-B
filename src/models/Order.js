@@ -41,6 +41,7 @@ const orderSchema = new mongoose.Schema({
   profit: { type: Number, min: 0, default: 0 },
   enderecoEntrega: { type: enderecoEntregaSchema, required: true },
   shippingAddress: { type: enderecoEntregaSchema },
+  shippingFee: { type: Number, default: 0 },
   paidAt: { type: Date },
   status: {
     type: String,

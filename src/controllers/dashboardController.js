@@ -14,12 +14,12 @@ const getMetrics = async (req, res, next) => {
     ] = await Promise.all([
       Product.countDocuments(),
       Product.countDocuments({ ativo: true }),
-      Product.countDocuments({ estoque: { $lte: 5 } }),
+      Product.countDocuments({ estoque: { $lte: 5, $ne: -1 } }),
       Order.aggregate([
         { $match: { criadoEm: { $gte: startMonth } } },
         { $group: { _id: null, total: { $sum: '$valorTotal' } } },
       ]),
-      Product.find().sort({ totalVendido: -1 }).limit(10).select('nome totalVendido preco'),
+      Product.find().sort({ soldCount: -1 }).limit(10).select('nome soldCount preco'),
     ]);
 
     return res.json({

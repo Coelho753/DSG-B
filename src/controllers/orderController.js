@@ -7,10 +7,26 @@ const { calculateFinalPrice } = require('../services/promotionService');
 const { generateWhatsAppLink } = require('../utils/whatsapp');
 const HttpError = require('../utils/httpError');
 
+const FREE_SHIPPING_THRESHOLD = 149;
+const DEFAULT_SHIPPING_FEE = 19.9;
+
 const resolveShippingAddress = (user, inputAddress) => {
   if (inputAddress) return inputAddress;
   if (user.address && Object.keys(user.address || {}).length) return user.address;
   return user.endereco;
+};
+
+const hasInfiniteStock = (product) => {
+  const stock = Number(product.stock ?? product.estoque);
+  return stock === -1 || product.stock === null || product.estoque === null;
+};
+
+const calculateShipping = (subtotal) => {
+  const frete = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : DEFAULT_SHIPPING_FEE;
+  return {
+    shippingFee: Number(frete.toFixed(2)),
+    shippingMessage: 'Frete grátis acima de R$149',
+  };
 };
 
 const createOrder = async (req, res, next) => {
@@ -25,7 +41,7 @@ const createOrder = async (req, res, next) => {
     const user = req.user;
 
     const produtosPedido = [];
-    let valorTotal = 0;
+    let subtotal = 0;
 
     await session.withTransaction(async () => {
       for (const rawItem of produtos) {
@@ -38,12 +54,13 @@ const createOrder = async (req, res, next) => {
           throw new HttpError(400, `Produto inválido: ${item.product}`);
         }
 
-        if (product.estoque < item.quantidade) {
+        const infiniteStock = hasInfiniteStock(product);
+        if (!infiniteStock && product.estoque < item.quantidade) {
           throw new HttpError(400, `Estoque insuficiente para ${product.nome}`);
         }
 
         const pricing = calculateFinalPrice(product);
-        const subtotal = Number((pricing.precoFinal * item.quantidade).toFixed(2));
+        const itemSubtotal = Number((pricing.precoFinal * item.quantidade).toFixed(2));
         const unitCost = Number(product.cost || 0);
         const profit = Number(((pricing.precoFinal - unitCost) * item.quantidade).toFixed(2));
 
@@ -52,17 +69,21 @@ const createOrder = async (req, res, next) => {
           nome: product.nome,
           quantidade: item.quantidade,
           precoUnitarioFinal: pricing.precoFinal,
-          subtotal,
+          subtotal: itemSubtotal,
           unitCost,
           profit,
         });
 
-        valorTotal += subtotal;
+        subtotal += itemSubtotal;
 
-        product.estoque -= item.quantidade;
+        if (!infiniteStock) product.estoque -= item.quantidade;
         product.totalVendido += item.quantidade;
+        product.soldCount += item.quantidade;
         await product.save({ session });
       }
+
+      const shipping = calculateShipping(subtotal);
+      const valorTotal = Number((subtotal + shipping.shippingFee).toFixed(2));
 
       const [order] = await Order.create(
         [
@@ -70,15 +91,17 @@ const createOrder = async (req, res, next) => {
             user: user._id,
             produtos: produtosPedido,
             items: produtosPedido,
-            valorTotal: Number(valorTotal.toFixed(2)),
+            valorTotal,
+            totalPaid: valorTotal,
             enderecoEntrega: resolveShippingAddress(user),
+            shippingFee: shipping.shippingFee,
           },
         ],
         { session }
       );
 
       const whatsappLink = generateWhatsAppLink(order);
-      res.status(201).json({ order, whatsappLink });
+      res.status(201).json({ order, whatsappLink, ...shipping });
     });
   } catch (error) {
     return next(error);
@@ -99,7 +122,7 @@ const checkoutCart = async (req, res, next) => {
       return res.status(400).json({ message: 'Carrinho vazio' });
     }
 
-    let totalPaid = 0;
+    let subtotal = 0;
     let totalProfit = 0;
     const orderItems = [];
 
@@ -107,10 +130,12 @@ const checkoutCart = async (req, res, next) => {
       for (const item of cart.items) {
         const product = await Product.findById(item.productId._id).session(session);
         if (!product || !product.ativo) throw new HttpError(400, `Produto inválido: ${item.productId}`);
-        if (product.estoque < item.quantity) throw new HttpError(400, `Estoque insuficiente para ${product.nome}`);
+
+        const infiniteStock = hasInfiniteStock(product);
+        if (!infiniteStock && product.estoque < item.quantity) throw new HttpError(400, `Estoque insuficiente para ${product.nome}`);
 
         const unitPrice = Number(item.unitPrice || product.preco || 0);
-        const subtotal = Number((unitPrice * item.quantity).toFixed(2));
+        const itemSubtotal = Number((unitPrice * item.quantity).toFixed(2));
         const unitCost = Number(product.cost || 0);
         const profit = Number(((unitPrice - unitCost) * item.quantity).toFixed(2));
 
@@ -119,19 +144,22 @@ const checkoutCart = async (req, res, next) => {
           nome: product.nome,
           quantidade: item.quantity,
           precoUnitarioFinal: unitPrice,
-          subtotal,
+          subtotal: itemSubtotal,
           unitCost,
           profit,
         });
 
-        totalPaid += subtotal;
+        subtotal += itemSubtotal;
         totalProfit += profit;
 
-        product.estoque -= item.quantity;
+        if (!infiniteStock) product.estoque -= item.quantity;
         product.totalVendido += item.quantity;
+        product.soldCount += item.quantity;
         await product.save({ session });
       }
 
+      const shipping = calculateShipping(subtotal);
+      const totalPaid = Number((subtotal + shipping.shippingFee).toFixed(2));
       const shippingAddress = resolveShippingAddress(user, req.body.shippingAddress);
 
       const [order] = await Order.create(
@@ -140,11 +168,12 @@ const checkoutCart = async (req, res, next) => {
             user: user._id,
             produtos: orderItems,
             items: orderItems,
-            valorTotal: Number(totalPaid.toFixed(2)),
-            totalPaid: Number(totalPaid.toFixed(2)),
+            valorTotal: totalPaid,
+            totalPaid,
             profit: Number(totalProfit.toFixed(2)),
             enderecoEntrega: shippingAddress,
             shippingAddress,
+            shippingFee: shipping.shippingFee,
             paidAt: new Date(),
             status: 'paid',
           },
@@ -170,9 +199,11 @@ const checkoutCart = async (req, res, next) => {
 
       cart.items = [];
       cart.updatedAt = new Date();
+      cart.isAbandoned = false;
+      cart.abandonedAt = null;
       await cart.save({ session });
 
-      res.status(201).json({ order, message: 'Pagamento concluído e pedido criado' });
+      res.status(201).json({ order, message: 'Pagamento concluído e pedido criado', ...shipping });
     });
   } catch (error) {
     return next(error);

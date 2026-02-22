@@ -48,7 +48,7 @@ app.use('/api/promotions', promotionRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit-logs', auditRoutes);
-app.use('/api/admin/notifications', adminNotificationRoutes);
+app.use('/api/admin', adminNotificationRoutes);
 
 app.use(errorHandler);
 

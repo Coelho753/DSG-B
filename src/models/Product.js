@@ -39,8 +39,8 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, min: 0 },
   cost: { type: Number, min: 0, default: 0 },
   precoPromocional: { type: Number, min: 0 },
-  estoque: { type: Number, required: true, min: 0 },
-  stock: { type: Number, min: 0 },
+  estoque: { type: Number, default: 0, index: true },
+  stock: { type: Number },
   sku: { type: String, trim: true, unique: true, sparse: true, index: true },
   marca: { type: String, trim: true, index: true },
   peso: { type: Number, min: 0 },
@@ -61,6 +61,7 @@ const productSchema = new mongoose.Schema({
   criadoEm: { type: Date, default: Date.now, index: true },
   atualizadoEm: { type: Date, default: Date.now },
   totalVendido: { type: Number, default: 0, index: true },
+  soldCount: { type: Number, default: 0, index: true },
 });
 
 productSchema.pre('save', function updateTimestamp(next) {
@@ -69,6 +70,9 @@ productSchema.pre('save', function updateTimestamp(next) {
   if (!this.description) this.description = this.descricao;
   if (this.price === undefined) this.price = this.preco;
   if (this.stock === undefined) this.stock = this.estoque;
+  if (this.estoque === null) this.estoque = -1;
+  if (this.stock === null) this.stock = -1;
+  if (this.soldCount === undefined) this.soldCount = this.totalVendido || 0;
   if (!this.categoryId) this.categoryId = this.categoria;
   if (!this.images?.length && this.imagens?.length) this.images = this.imagens;
   if (!this.imageUrl) {

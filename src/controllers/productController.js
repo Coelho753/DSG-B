@@ -18,7 +18,8 @@ const serializeProduct = (productDoc) => {
   return {
     ...product,
     ...pricing,
-    estoqueBaixo: asNumber(product.estoque, 0) <= 5,
+    estoqueInfinito: Number(product.stock ?? product.estoque) === -1 || product.stock === null || product.estoque === null,
+    estoqueBaixo: Number(product.stock ?? product.estoque) !== -1 && asNumber(product.estoque, 0) <= 5,
     // aliases para compatibilidade com frontend
     price: preco,
     finalPrice: asNumber(pricing.precoFinal, 0),
@@ -176,7 +177,7 @@ const getProducts = async (req, res, next) => {
       precoAsc: { preco: 1 },
       precoDesc: { preco: -1 },
       maisRecentes: { criadoEm: -1 },
-      maisVendidos: { totalVendido: -1 },
+      maisVendidos: { soldCount: -1 },
       dataAsc: { criadoEm: 1 },
       dataDesc: { criadoEm: -1 },
     };
