@@ -6,7 +6,7 @@ const toNumber = z.preprocess((value) => Number(value), z.number());
 
 const promotionSchema = z.object({
   title: z.string().min(2),
-  discountPercentage: toNumber.min(1).max(100),
+  discountPercentage: z.coerce.number().min(1).max(100),
   productId: objectId,
   startDate: z.string().min(1),
   endDate: z.string().min(1),
