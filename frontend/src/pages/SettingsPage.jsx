@@ -5,14 +5,26 @@ import { useToast } from '../hooks/useToast';
 
 export default function SettingsPage() {
   const toast = useToast();
-  const [profile, setProfile] = useState({ address: {}, themePreference: 'light' });
+  const [profile, setProfile] = useState({
+    nome: '',
+    email: '',
+    password: '',
+    address: {},
+    themePreference: 'light',
+  });
   const { theme, setTheme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
         const { data } = await api.get('/users/profile');
-        setProfile(data);
+        setProfile((prev) => ({
+          ...prev,
+          nome: data.nome || '',
+          email: data.email || '',
+          address: data.address || {},
+          themePreference: data.themePreference || 'light',
+        }));
         if (data.themePreference) setTheme(data.themePreference);
       } catch (error) {
         toast.error(error.response?.data?.message || 'Erro ao carregar perfil');
@@ -24,9 +36,22 @@ export default function SettingsPage() {
 
   const save = async () => {
     try {
-      const { data } = await api.put('/users/profile', { address: profile.address, themePreference: theme });
-      setProfile(data.user);
-      toast.success('Perfil salvo');
+      const payload = {
+        nome: profile.nome,
+        email: profile.email,
+        address: profile.address,
+        themePreference: theme,
+      };
+
+      if (profile.password) payload.password = profile.password;
+
+      const { data } = await api.put('/users/profile', payload);
+      setProfile((prev) => ({
+        ...prev,
+        ...data.user,
+        password: '',
+      }));
+      toast.success('Perfil salvo com sucesso');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Erro ao salvar perfil');
     }
@@ -34,10 +59,15 @@ export default function SettingsPage() {
 
   return (
     <div style={{ maxWidth: 700, display: 'grid', gap: 12 }}>
-      <h2>Settings</h2>
+      <h2>Configurações</h2>
       <button type="button" onClick={toggleTheme}>Alternar tema ({theme})</button>
 
-      <h3>Endereço</h3>
+      <h3>Conta</h3>
+      <input placeholder="Nome" value={profile.nome || ''} onChange={(e) => setProfile({ ...profile, nome: e.target.value })} />
+      <input placeholder="Email" value={profile.email || ''} onChange={(e) => setProfile({ ...profile, email: e.target.value })} />
+      <input type="password" placeholder="Nova senha (opcional)" value={profile.password || ''} onChange={(e) => setProfile({ ...profile, password: e.target.value })} />
+
+      <h3>Endereço de entrega</h3>
       <input placeholder="Rua" value={profile.address?.street || ''} onChange={(e) => setProfile({ ...profile, address: { ...profile.address, street: e.target.value } })} />
       <input placeholder="Número" value={profile.address?.number || ''} onChange={(e) => setProfile({ ...profile, address: { ...profile.address, number: e.target.value } })} />
       <input placeholder="Cidade" value={profile.address?.city || ''} onChange={(e) => setProfile({ ...profile, address: { ...profile.address, city: e.target.value } })} />
