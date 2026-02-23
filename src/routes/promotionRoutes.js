@@ -1,18 +1,22 @@
 const express = require("express");
 const router = express.Router();
 
-const {
-  createPromotion,
-  getPromotions,
-  getPromotionById,
-  updatePromotion,
-  deletePromotion,
-} = require("../controllers/promotionController");
+const promotionController = require("../controllers/promotionController");
+const authMiddleware = require("../middlewares/authMiddleware");
 
-router.post("/", createPromotion);
-router.get("/", getPromotions);
-router.get("/:id", getPromotionById);
-router.put("/:id", updatePromotion);
-router.delete("/:id", deletePromotion);
+// Criar promoção
+router.post("/", authMiddleware, promotionController.createPromotion);
+
+// Listar promoções
+router.get("/", promotionController.getPromotions);
+
+// Buscar promoção por ID
+router.get("/:id", promotionController.getPromotionById);
+
+// Atualizar promoção
+router.put("/:id", authMiddleware, promotionController.updatePromotion);
+
+// Deletar promoção
+router.delete("/:id", authMiddleware, promotionController.deletePromotion);
 
 module.exports = router;
