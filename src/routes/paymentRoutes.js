@@ -1,13 +1,8 @@
-/**
- * Routes: mapeia endpoints HTTP para seus respectivos controllers e middlewares.
- * Arquivo: src/routes/paymentRoutes.js
- */
-import express from "express"
-import { checkout, webhook } from "../controllers/paymentController.js"
+const express = require("express");
+const paymentController = require("../controllers/paymentController");
 
-const router = express.Router()
+const router = express.Router();
 
-router.post("/checkout", checkout)
-router.post("/webhook/mercadopago", webhook)
+router.post("/create", paymentController.createPayment);
 
-export default router
+module.exports = router;
