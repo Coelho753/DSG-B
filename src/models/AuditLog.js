@@ -1,3 +1,7 @@
+/**
+ * Model: define o schema/estrutura persistida no MongoDB via Mongoose.
+ * Arquivo: src/models/AuditLog.js
+ */
 const mongoose = require('mongoose');
 
 const auditLogSchema = new mongoose.Schema({

@@ -1,3 +1,7 @@
+/**
+ * Arquivo principal da aplicação backend.
+ * Arquivo: src/server.js
+ */
 const app = require('./app');
 const env = require('./config/env');
 const connectDatabase = require('./config/database');

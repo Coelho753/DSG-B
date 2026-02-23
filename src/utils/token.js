@@ -1,3 +1,7 @@
+/**
+ * Utilitário: funções auxiliares compartilhadas por diferentes camadas do backend.
+ * Arquivo: src/utils/token.js
+ */
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const env = require('../config/env');

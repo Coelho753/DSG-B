@@ -1,3 +1,7 @@
+/**
+ * Model: define o schema/estrutura persistida no MongoDB via Mongoose.
+ * Arquivo: src/models/AdminNotification.js
+ */
 const mongoose = require('mongoose');
 
 const adminNotificationSchema = new mongoose.Schema({

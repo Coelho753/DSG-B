@@ -1,3 +1,7 @@
+/**
+ * Utilitário: funções auxiliares compartilhadas por diferentes camadas do backend.
+ * Arquivo: src/utils/slugify.js
+ */
 const slugify = (text = '') => {
   return text
     .toString()

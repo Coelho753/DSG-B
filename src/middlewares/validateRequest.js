@@ -1,3 +1,7 @@
+/**
+ * Middleware: intercepta o ciclo da requisição para autenticação, validação e tratamento transversal.
+ * Arquivo: src/middlewares/validateRequest.js
+ */
 const { validationResult } = require('express-validator');
 
 const validateRequest = (req, res, next) => {

@@ -1,3 +1,7 @@
+/**
+ * Service: concentra regras de negócio reutilizáveis e integrações externas.
+ * Arquivo: src/services/auditService.js
+ */
 const AuditLog = require('../models/AuditLog');
 
 const logAdminAction = async ({ req, action, resource, resourceId, payload }) => {

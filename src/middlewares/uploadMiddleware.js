@@ -1,3 +1,7 @@
+/**
+ * Middleware: intercepta o ciclo da requisição para autenticação, validação e tratamento transversal.
+ * Arquivo: src/middlewares/uploadMiddleware.js
+ */
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');

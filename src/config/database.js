@@ -1,3 +1,7 @@
+/**
+ * Configuração: centraliza leitura de ambiente e inicialização de infraestrutura.
+ * Arquivo: src/config/database.js
+ */
 const mongoose = require('mongoose');
 const env = require('./env');
 

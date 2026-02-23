@@ -1,3 +1,7 @@
+/**
+ * Middleware: intercepta o ciclo da requisição para autenticação, validação e tratamento transversal.
+ * Arquivo: src/middlewares/sanitizeInput.js
+ */
 const sanitize = (value) => {
   if (typeof value === 'string') {
     return value.replace(/[<>$]/g, '').trim();

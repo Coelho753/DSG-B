@@ -1,3 +1,7 @@
+/**
+ * Model: define o schema/estrutura persistida no MongoDB via Mongoose.
+ * Arquivo: src/models/User.js
+ */
 const mongoose = require('mongoose');
 
 const enderecoSchema = new mongoose.Schema(

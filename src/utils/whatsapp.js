@@ -1,3 +1,7 @@
+/**
+ * Utilitário: funções auxiliares compartilhadas por diferentes camadas do backend.
+ * Arquivo: src/utils/whatsapp.js
+ */
 const WHATSAPP_NUMBER = '+5511965474023';
 
 const toMoney = (value) => {

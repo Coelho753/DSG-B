@@ -1,3 +1,7 @@
+/**
+ * Validator: define regras de validação para payloads de entrada das APIs.
+ * Arquivo: src/validators/adminValidators.js
+ */
 const { z } = require('zod');
 
 const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/);
@@ -5,7 +9,6 @@ const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/);
 const toNumber = z.coerce.number();
 
 const promotionSchema = z.object({
-  title: z.string().min(2),
   discountPercentage: toNumber.min(1).max(100),
   productId: objectId,
   startDate: z.string().min(1),

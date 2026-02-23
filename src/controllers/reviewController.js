@@ -1,3 +1,7 @@
+/**
+ * Controller: recebe requisições HTTP, valida entradas básicas e delega regras aos serviços/modelos.
+ * Arquivo: src/controllers/reviewController.js
+ */
 const Review = require('../models/Review');
 const Product = require('../models/Product');
 

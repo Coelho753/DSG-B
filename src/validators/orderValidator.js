@@ -1,3 +1,7 @@
+/**
+ * Validator: define regras de validação para payloads de entrada das APIs.
+ * Arquivo: src/validators/orderValidator.js
+ */
 const { body } = require('express-validator');
 
 const createOrderValidator = [

@@ -1,3 +1,7 @@
+/**
+ * Routes: mapeia endpoints HTTP para seus respectivos controllers e middlewares.
+ * Arquivo: src/routes/adminNotificationRoutes.js
+ */
 const express = require('express');
 const authMiddleware = require('../middlewares/authMiddleware');
 const authorizeRoles = require('../middlewares/roleMiddleware');
