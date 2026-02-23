@@ -1,20 +1,18 @@
-/**
- * Routes: mapeia endpoints HTTP para seus respectivos controllers e middlewares.
- * Arquivo: src/routes/promotionRoutes.js
- */
-const express = require('express');
-const authMiddleware = require('../middlewares/authMiddleware');
-const authorizeRoles = require('../middlewares/roleMiddleware');
-const { zodValidator, promotionSchema } = require('../validators/adminValidators');
-const promotionController = require('../controllers/promotionController');
-
+const express = require("express");
 const router = express.Router();
 
-router.use(authMiddleware, authorizeRoles('admin', 'seller'));
+const {
+  createPromotion,
+  getPromotions,
+  getPromotionById,
+  updatePromotion,
+  deletePromotion,
+} = require("../controllers/promotionController");
 
-router.get('/', promotionController.getPromotions);
-router.post('/', zodValidator(promotionSchema), promotionController.createPromotion);
-router.put('/:id', zodValidator(promotionSchema), promotionController.updatePromotion);
-router.delete('/:id', promotionController.deletePromotion);
+router.post("/", createPromotion);
+router.get("/", getPromotions);
+router.get("/:id", getPromotionById);
+router.put("/:id", updatePromotion);
+router.delete("/:id", deletePromotion);
 
 module.exports = router;
