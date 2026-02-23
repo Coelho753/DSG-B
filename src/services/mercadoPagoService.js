@@ -5,20 +5,8 @@ const client = new MercadoPagoConfig({
 });
 
 const createPreference = async (data) => {
-  try {
-    const preference = new Preference(client);
-
-    const response = await preference.create({
-      body: data,
-    });
-
-    return response;
-  } catch (error) {
-    console.error("Erro Mercado Pago:", error);
-    throw error;
-  }
+  const preference = new Preference(client);
+  return await preference.create({ body: data });
 };
 
-module.exports = {
-  createPreference,
-};
+module.exports = { createPreference };
