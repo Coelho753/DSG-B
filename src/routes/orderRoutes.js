@@ -1,3 +1,7 @@
+/**
+ * Routes: mapeia endpoints HTTP para seus respectivos controllers e middlewares.
+ * Arquivo: src/routes/orderRoutes.js
+ */
 const express = require('express');
 const orderController = require('../controllers/orderController');
 const authMiddleware = require('../middlewares/authMiddleware');

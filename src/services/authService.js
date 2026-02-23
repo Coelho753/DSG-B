@@ -1,3 +1,7 @@
+/**
+ * Service: concentra regras de negócio reutilizáveis e integrações externas.
+ * Arquivo: src/services/authService.js
+ */
 const jwt = require('jsonwebtoken');
 const dayjs = require('dayjs');
 const bcrypt = require('bcrypt');

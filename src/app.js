@@ -1,3 +1,7 @@
+/**
+ * Arquivo principal da aplicação backend.
+ * Arquivo: src/app.js
+ */
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -16,6 +20,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const adminNotificationRoutes = require('./routes/adminNotificationRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 const sanitizeInput = require('./middlewares/sanitizeInput');
 const apiLimiter = require('./middlewares/rateLimiter');
 const errorHandler = require('./middlewares/errorHandler');
@@ -49,6 +54,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/admin', adminNotificationRoutes);
+app.use('/api', paymentRoutes);
 
 app.use(errorHandler);
 

@@ -1,3 +1,7 @@
+/**
+ * Controller: recebe requisições HTTP, valida entradas básicas e delega regras aos serviços/modelos.
+ * Arquivo: src/controllers/cartController.js
+ */
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const { calculateFinalPrice } = require('../services/promotionService');
@@ -37,7 +41,7 @@ const getCart = async (req, res, next) => {
   try {
     const cart = await ensureCart(req.user._id);
     await markAbandonedIfNeeded(cart);
-    const populated = await Cart.findById(cart._id).populate('items.productId', 'nome preco imagens imageUrl estoque stock');
+    const populated = await Cart.findById(cart._id).populate('items.productId', 'name price imageUrl stock');
     return res.json({ ...populated.toObject(), ...calcTotals(populated.items) });
   } catch (error) {
     return next(error);
@@ -50,10 +54,10 @@ const addToCart = async (req, res, next) => {
     const quantity = Math.max(Number(req.body.quantity || req.body.qty || 1), 1);
 
     const product = await Product.findById(productId);
-    if (!product || !product.ativo) return res.status(404).json({ message: 'Produto não encontrado' });
+    if (!product) return res.status(404).json({ message: 'Produto não encontrado' });
 
-    const stock = Number(product.stock ?? product.estoque);
-    const infiniteStock = stock === -1 || product.stock === null || product.estoque === null;
+    const stock = Number(product.stock);
+    const infiniteStock = stock === -1;
 
     const cart = await ensureCart(req.user._id);
     const existing = cart.items.find((i) => String(i.productId) === String(productId));
@@ -75,7 +79,7 @@ const addToCart = async (req, res, next) => {
     setCartAsActive(cart);
     await cart.save();
 
-    const populated = await Cart.findById(cart._id).populate('items.productId', 'nome preco imagens imageUrl estoque stock');
+    const populated = await Cart.findById(cart._id).populate('items.productId', 'name price imageUrl stock');
     return res.status(201).json({ ...populated.toObject(), ...calcTotals(populated.items) });
   } catch (error) {
     return next(error);
@@ -95,9 +99,9 @@ const updateCartItem = async (req, res, next) => {
     if (!item) return res.status(404).json({ message: 'Item não encontrado no carrinho' });
 
     const product = await Product.findById(productId);
-    if (!product || !product.ativo) return res.status(404).json({ message: 'Produto não encontrado' });
-    const stock = Number(product.stock ?? product.estoque);
-    const infiniteStock = stock === -1 || product.stock === null || product.estoque === null;
+    if (!product) return res.status(404).json({ message: 'Produto não encontrado' });
+    const stock = Number(product.stock);
+    const infiniteStock = stock === -1;
     if (!infiniteStock && stock >= 0 && quantity > stock) {
       return res.status(400).json({ message: 'Estoque insuficiente para este produto' });
     }
@@ -106,7 +110,7 @@ const updateCartItem = async (req, res, next) => {
     setCartAsActive(cart);
     await cart.save();
 
-    const populated = await Cart.findById(cart._id).populate('items.productId', 'nome preco imagens imageUrl estoque stock');
+    const populated = await Cart.findById(cart._id).populate('items.productId', 'name price imageUrl stock');
     return res.json({ ...populated.toObject(), ...calcTotals(populated.items) });
   } catch (error) {
     return next(error);
@@ -121,7 +125,7 @@ const removeCartItem = async (req, res, next) => {
     setCartAsActive(cart);
     await cart.save();
 
-    const populated = await Cart.findById(cart._id).populate('items.productId', 'nome preco imagens imageUrl estoque stock');
+    const populated = await Cart.findById(cart._id).populate('items.productId', 'name price imageUrl stock');
     return res.json({ ...populated.toObject(), ...calcTotals(populated.items) });
   } catch (error) {
     return next(error);
@@ -143,8 +147,8 @@ const clearCart = async (req, res, next) => {
 const getAbandonedCarts = async (req, res, next) => {
   try {
     const carts = await Cart.find({ isAbandoned: true, items: { $exists: true, $ne: [] } })
-      .populate('userId', 'nome email')
-      .populate('items.productId', 'nome preco imageUrl');
+      .populate('userId', 'name email')
+      .populate('items.productId', 'name price imageUrl');
 
     const payload = carts.map((cart) => {
       const totals = calcTotals(cart.items);

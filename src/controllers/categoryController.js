@@ -1,3 +1,7 @@
+/**
+ * Controller: recebe requisições HTTP, valida entradas básicas e delega regras aos serviços/modelos.
+ * Arquivo: src/controllers/categoryController.js
+ */
 const Category = require('../models/Category');
 const slugify = require('../utils/slugify');
 const { logAdminAction } = require('../services/auditService');

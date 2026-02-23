@@ -1,3 +1,7 @@
+/**
+ * Controller: recebe requisições HTTP, valida entradas básicas e delega regras aos serviços/modelos.
+ * Arquivo: src/controllers/auditController.js
+ */
 const AuditLog = require('../models/AuditLog');
 
 const getAuditLogs = async (req, res, next) => {

@@ -1,3 +1,7 @@
+/**
+ * Model: define o schema/estrutura persistida no MongoDB via Mongoose.
+ * Arquivo: src/models/Setting.js
+ */
 const mongoose = require('mongoose');
 
 const settingSchema = new mongoose.Schema({

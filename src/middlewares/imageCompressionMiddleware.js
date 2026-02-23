@@ -1,3 +1,7 @@
+/**
+ * Middleware: intercepta o ciclo da requisição para autenticação, validação e tratamento transversal.
+ * Arquivo: src/middlewares/imageCompressionMiddleware.js
+ */
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');

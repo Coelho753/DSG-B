@@ -1,3 +1,7 @@
+/**
+ * Model: define o schema/estrutura persistida no MongoDB via Mongoose.
+ * Arquivo: src/models/Cart.js
+ */
 const mongoose = require('mongoose');
 
 const cartItemSchema = new mongoose.Schema(

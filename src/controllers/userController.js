@@ -1,3 +1,7 @@
+/**
+ * Controller: recebe requisições HTTP, valida entradas básicas e delega regras aos serviços/modelos.
+ * Arquivo: src/controllers/userController.js
+ */
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
 

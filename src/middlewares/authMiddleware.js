@@ -1,3 +1,7 @@
+/**
+ * Middleware: intercepta o ciclo da requisição para autenticação, validação e tratamento transversal.
+ * Arquivo: src/middlewares/authMiddleware.js
+ */
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 const User = require('../models/User');
