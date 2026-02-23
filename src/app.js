@@ -1,3 +1,7 @@
+/**
+ * Arquivo principal da aplicação backend.
+ * Arquivo: src/app.js
+ */
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -16,6 +20,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const adminNotificationRoutes = require('./routes/adminNotificationRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 const sanitizeInput = require('./middlewares/sanitizeInput');
 const apiLimiter = require('./middlewares/rateLimiter');
 const errorHandler = require('./middlewares/errorHandler');
@@ -30,6 +35,8 @@ app.use(morgan('combined'));
 app.use(sanitizeInput);
 app.use('/api', apiLimiter);
 app.use('/uploads', express.static(path.resolve(env.uploadDir)));
+// Compatibilidade para servir imagens também em src/uploads quando o frontend usar /uploads direto.
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -49,6 +56,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/admin', adminNotificationRoutes);
+app.use('/api', paymentRoutes);
 
 app.use(errorHandler);
 

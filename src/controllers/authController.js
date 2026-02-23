@@ -1,3 +1,7 @@
+/**
+ * Controller: recebe requisições HTTP, valida entradas básicas e delega regras aos serviços/modelos.
+ * Arquivo: src/controllers/authController.js
+ */
 const authService = require('../services/authService');
 
 const register = async (req, res, next) => {

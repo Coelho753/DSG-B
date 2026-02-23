@@ -1,3 +1,7 @@
+/**
+ * Routes: mapeia endpoints HTTP para seus respectivos controllers e middlewares.
+ * Arquivo: src/routes/userRoutes.js
+ */
 const express = require('express');
 const { body } = require('express-validator');
 const userController = require('../controllers/userController');

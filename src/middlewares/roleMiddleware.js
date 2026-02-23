@@ -1,3 +1,7 @@
+/**
+ * Middleware: intercepta o ciclo da requisição para autenticação, validação e tratamento transversal.
+ * Arquivo: src/middlewares/roleMiddleware.js
+ */
 const authorizeRoles = (...allowedRoles) => (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ message: 'Usuário não autenticado' });

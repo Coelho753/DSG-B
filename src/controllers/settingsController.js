@@ -1,3 +1,7 @@
+/**
+ * Controller: recebe requisições HTTP, valida entradas básicas e delega regras aos serviços/modelos.
+ * Arquivo: src/controllers/settingsController.js
+ */
 const bcrypt = require('bcrypt');
 const Setting = require('../models/Setting');
 const { logAdminAction } = require('../services/auditService');

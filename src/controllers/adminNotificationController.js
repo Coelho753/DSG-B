@@ -1,3 +1,7 @@
+/**
+ * Controller: recebe requisições HTTP, valida entradas básicas e delega regras aos serviços/modelos.
+ * Arquivo: src/controllers/adminNotificationController.js
+ */
 const AdminNotification = require('../models/AdminNotification');
 const Cart = require('../models/Cart');
 

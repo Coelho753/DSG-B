@@ -1,3 +1,7 @@
+/**
+ * Validator: define regras de validação para payloads de entrada das APIs.
+ * Arquivo: src/validators/authValidator.js
+ */
 const { body } = require('express-validator');
 
 const resolveName = (b = {}) => b.nome || b.name || b.fullName || b.nomeCompleto || b.username;

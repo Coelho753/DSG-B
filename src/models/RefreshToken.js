@@ -1,3 +1,7 @@
+/**
+ * Model: define o schema/estrutura persistida no MongoDB via Mongoose.
+ * Arquivo: src/models/RefreshToken.js
+ */
 const mongoose = require('mongoose');
 
 const refreshTokenSchema = new mongoose.Schema({

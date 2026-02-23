@@ -1,3 +1,7 @@
+/**
+ * Middleware: intercepta o ciclo da requisição para autenticação, validação e tratamento transversal.
+ * Arquivo: src/middlewares/rateLimiter.js
+ */
 const rateLimit = require('express-rate-limit');
 
 const apiLimiter = rateLimit({
