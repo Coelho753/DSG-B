@@ -1,23 +1,32 @@
-/**
- * Arquivo principal da aplicação backend.
- * Arquivo: src/server.js
- */
-const app = require('./app');
-const env = require('./config/env');
-const connectDatabase = require('./config/database');
+const express = require("express");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const mongoose = require("mongoose");
 
-const startServer = async () => {
-  try {
-    await connectDatabase();
-    app.listen(env.port, () => {
-      // eslint-disable-next-line no-console
-      console.log(`Servidor iniciado na porta ${env.port}`);
-    });
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Falha ao iniciar servidor:', error.message);
-    process.exit(1);
-  }
-};
+dotenv.config();
 
-startServer();
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// IMPORTA ROTAS
+const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
+const productRoutes = require("./routes/productRoutes");
+const promotionRoutes = require("./routes/promotionRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+
+// USA ROTAS
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/promotions", promotionRoutes);
+app.use("/api/payments", paymentRoutes);
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB conectado"))
+  .catch(err => console.error(err));
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
