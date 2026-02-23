@@ -1,7 +1,9 @@
 /**
+ /**
  * Routes: mapeia endpoints HTTP para seus respectivos controllers e middlewares.
  * Arquivo: src/routes/userRoutes.js
  */
+
 const express = require('express');
 const { body } = require('express-validator');
 const userController = require('../controllers/userController');
@@ -11,10 +13,17 @@ const validateRequest = require('../middlewares/validateRequest');
 
 const router = express.Router();
 
+// Buscar perfil do usuário logado
 router.get('/me', authMiddleware, userController.getProfile);
-router.get('/profile', authMiddleware, userController.getUserProfile);
-router.put("/profile", authMiddleware, updateProfile)
 
+// Atualizar perfil do usuário logado
+router.put(
+  '/profile',
+  authMiddleware,
+  userController.updateProfile
+);
+
+// Atualizar role (apenas admin)
 router.patch(
   '/:id/role',
   authMiddleware,
@@ -23,7 +32,5 @@ router.patch(
   validateRequest,
   userController.updateUserRole
 );
-
-export default router
 
 module.exports = router;
