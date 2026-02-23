@@ -2,10 +2,10 @@
  * Controller: recebe requisições HTTP, valida entradas básicas e delega regras aos serviços/modelos.
  * Arquivo: src/controllers/productController.js
  */
-import Product from "../models/Product.js"
+const Product = require('../models/Product');
 import Promotion from "../models/Promotion.js"
 
-export const getProducts = async (req, res) => {
+module.exports getProducts = async (req, res) => {
   try {
     const products = await Product.find()
     const promotions = await Promotion.find({ active: true })
