@@ -2,33 +2,27 @@
  * Service: concentra regras de negócio reutilizáveis e integrações externas.
  * Arquivo: src/services/mercadoPagoService.js
  */
-const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
+import mercadopago from "mercadopago"
 
-// Cria cliente do Mercado Pago sempre a partir de variáveis de ambiente.
-const getClient = () => {
-  const accessToken = process.env.MP_ACCESS_TOKEN;
-  if (!accessToken) {
-    throw new Error('MP_ACCESS_TOKEN não configurado');
+mercadopago.configure({
+  access_token: process.env.MP_ACCESS_TOKEN
+})
+
+export const createPreference = async (items) => {
+  const preference = {
+    items,
+    back_urls: {
+      success: process.env.FRONT_URL + "/success",
+      failure: process.env.FRONT_URL + "/failure"
+    },
+    auto_return: "approved"
   }
 
-  return new MercadoPagoConfig({ accessToken });
-};
+  const response = await mercadopago.preferences.create(preference)
+  return response.body.init_point
+}
 
-// Cria uma preferência de checkout e retorna resposta completa da API.
-const createPreference = async (payload) => {
-  const client = getClient();
-  const preference = new Preference(client);
-  return preference.create({ body: payload });
-};
-
-// Consulta um pagamento específico para validar status no webhook.
-const getPayment = async (paymentId) => {
-  const client = getClient();
-  const payment = new Payment(client);
-  return payment.get({ id: String(paymentId) });
-};
-
-module.exports = {
-  createPreference,
-  getPayment,
-};
+export const getPayment = async (id) => {
+  const payment = await mercadopago.payment.findById(id)
+  return payment.body
+}
