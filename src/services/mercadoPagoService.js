@@ -1,28 +1,19 @@
-/**
- * Service: concentra regras de negócio reutilizáveis e integrações externas.
- * Arquivo: src/services/mercadoPagoService.js
- */
-import mercadopago from "mercadopago"
+const mercadopago = require("mercadopago");
 
 mercadopago.configure({
-  access_token: process.env.MP_ACCESS_TOKEN
-})
+  access_token: process.env.MERCADO_PAGO_ACCESS_TOKEN
+});
 
-export const createPreference = async (items) => {
+const createPreference = async (data) => {
   const preference = {
-    items,
-    back_urls: {
-      success: process.env.FRONT_URL + "/success",
-      failure: process.env.FRONT_URL + "/failure"
-    },
-    auto_return: "approved"
-  }
+    items: data.items,
+    notification_url: process.env.BASE_URL + "/api/payments/webhook"
+  };
 
-  const response = await mercadopago.preferences.create(preference)
-  return response.body.init_point
-}
+  const response = await mercadopago.preferences.create(preference);
+  return response.body;
+};
 
-export const getPayment = async (id) => {
-  const payment = await mercadopago.payment.findById(id)
-  return payment.body
-}
+module.exports = {
+  createPreference
+};
