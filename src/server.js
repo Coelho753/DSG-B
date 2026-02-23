@@ -23,6 +23,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/promotions", promotionRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/uploads", express.static("uploads"));
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB conectado"))
