@@ -1,30 +1,20 @@
 const { createPreference } = require("../services/mercadoPagoService");
 
-const createPayment = async (req, res) => {
+exports.createPayment = async (req, res) => {
   try {
-    const preferenceData = {
+    const result = await createPreference({
       items: [
         {
-          title: req.body.title || "Produto",
-          quantity: req.body.quantity || 1,
-          unit_price: Number(req.body.unit_price) || 0,
+          title: req.body.title,
+          quantity: 1,
+          unit_price: Number(req.body.unit_price),
           currency_id: "BRL",
         },
       ],
-    };
-
-    const result = await createPreference(preferenceData);
-
-    res.json({
-      id: result.id,
-      init_point: result.init_point,
     });
-  } catch (error) {
-    console.error("Erro ao criar pagamento:", error);
-    res.status(500).json({ error: "Erro ao criar pagamento" });
-  }
-};
 
-module.exports = {
-  createPayment,
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
