@@ -1,19 +1,24 @@
-const mercadopago = require("mercadopago");
+const { MercadoPagoConfig, Preference } = require("mercadopago");
 
-mercadopago.configure({
-  access_token: process.env.MERCADO_PAGO_ACCESS_TOKEN
+const client = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN,
 });
 
 const createPreference = async (data) => {
-  const preference = {
-    items: data.items,
-    notification_url: process.env.BASE_URL + "/api/payments/webhook"
-  };
+  try {
+    const preference = new Preference(client);
 
-  const response = await mercadopago.preferences.create(preference);
-  return response.body;
+    const response = await preference.create({
+      body: data,
+    });
+
+    return response;
+  } catch (error) {
+    console.error("Erro Mercado Pago:", error);
+    throw error;
+  }
 };
 
 module.exports = {
-  createPreference
+  createPreference,
 };
