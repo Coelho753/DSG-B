@@ -1,23 +1,14 @@
 const express = require("express");
-const { body } = require("express-validator");
-const userController = require("../controllers/userController");
-const authMiddleware = require("../middlewares/authMiddleware");
-const authorizeRoles = require("../middlewares/roleMiddleware");
-const validateRequest = require("../middlewares/validateRequest");
-
 const router = express.Router();
 
-router.get("/me", authMiddleware, userController.getProfile);
+const {
+  getProfile,
+  updateProfile,
+} = require("../controllers/userController");
 
-router.put("/profile", authMiddleware, userController.updateProfile);
+const authMiddleware = require("../middleware/authMiddleware");
 
-router.patch(
-  "/:id/role",
-  authMiddleware,
-  authorizeRoles("admin"),
-  body("role").isIn(["user", "admin", "seller", "distribuidor", "revendedor"]),
-  validateRequest,
-  userController.updateUserRole
-);
+router.get("/profile", authMiddleware, getProfile);
+router.put("/profile", authMiddleware, updateProfile);
 
 module.exports = router;
