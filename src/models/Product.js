@@ -2,7 +2,7 @@
  * Model: define o schema/estrutura persistida no MongoDB via Mongoose.
  * Arquivo: src/models/Product.js
  */
-import mongoose from "mongoose"
+const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
   {
@@ -32,4 +32,4 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-export default mongoose.model("Product", productSchema)
+module.exports = mongoose.model("Product", productSchema);
