@@ -1,46 +1,38 @@
 const User = require("../models/User");
+const bcrypt = require("bcryptjs");
 
-const getProfile = async (req, res) => {
+// Buscar perfil
+exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
     res.json(user);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erro ao buscar perfil" });
+    res.status(500).json({ message: error.message });
   }
 };
 
-const updateProfile = async (req, res) => {
+// Atualizar perfil
+exports.updateProfile = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      req.body,
-      { new: true }
-    ).select("-password");
+    const { name, email, password } = req.body;
 
-    res.json(user);
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
+    }
+
+    user.name = name || user.name;
+    user.email = email || user.email;
+
+    if (password) {
+      user.password = await bcrypt.hash(password, 10);
+    }
+
+    await user.save();
+
+    res.json({ message: "Perfil atualizado com sucesso" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erro ao atualizar perfil" });
+    res.status(500).json({ message: error.message });
   }
-};
-
-const updateUserRole = async (req, res) => {
-  try {
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { role: req.body.role },
-      { new: true }
-    );
-    res.json(user);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erro ao atualizar role" });
-  }
-};
-
-module.exports = {
-  getProfile,
-  updateProfile,
-  updateUserRole
 };
