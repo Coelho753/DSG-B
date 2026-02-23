@@ -1,26 +1,19 @@
-import User from "../models/User.js"
+const User = require("../models/User");
 
-export const updateProfile = async (req, res) => {
+const updateProfile = async (req, res) => {
   try {
-    const userId = req.user.id
-
-    const updated = await User.findByIdAndUpdate(
-      userId,
-      {
-        name: req.body.name,
-        email: req.body.email
-      },
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      req.body,
       { new: true }
-    )
-
-    return res.json({
-      success: true,
-      data: updated
-    })
-  } catch {
-    return res.status(400).json({
-      success: false,
-      message: "Erro ao atualizar perfil"
-    })
+    );
+    res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao atualizar perfil" });
   }
-}
+};
+
+module.exports = {
+  updateProfile
+};
