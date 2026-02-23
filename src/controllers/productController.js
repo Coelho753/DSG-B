@@ -1,6 +1,6 @@
 const Product = require("../models/Product");
 
-exports.createProduct = async (req, res) => {
+const createProduct = async (req, res) => {
   try {
     const product = await Product.create(req.body);
     res.status(201).json(product);
@@ -10,7 +10,7 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-exports.getProducts = async (req, res) => {
+const getProducts = async (req, res) => {
   try {
     const products = await Product.find();
     res.json(products);
@@ -20,7 +20,7 @@ exports.getProducts = async (req, res) => {
   }
 };
 
-exports.updateProduct = async (req, res) => {
+const updateProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(
       req.params.id,
@@ -34,7 +34,7 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-exports.deleteProduct = async (req, res) => {
+const deleteProduct = async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
     res.json({ message: "Produto deletado" });
@@ -42,4 +42,11 @@ exports.deleteProduct = async (req, res) => {
     console.error(error);
     res.status(500).json({ error: "Erro ao deletar produto" });
   }
+};
+
+module.exports = {
+  createProduct,
+  getProducts,
+  updateProduct,
+  deleteProduct
 };
