@@ -1,61 +1,52 @@
-/**
- * Controller: recebe requisições HTTP, valida entradas básicas e delega regras aos serviços/modelos.
- * Arquivo: src/controllers/authController.js
- */
-const authService = require('../services/authService');
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
-const register = async (req, res, next) => {
+exports.register = async (req, res) => {
   try {
-    const user = await authService.register(req.body, req.user);
-    return res.status(201).json({
-      message: 'Usuário registrado com sucesso',
-      user: { id: user._id, nome: user.nome, email: user.email, role: user.role },
+    const { name, email, password } = req.body;
+
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: "Usuário já existe" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword
     });
+
+    res.status(201).json(user);
   } catch (error) {
-    return next(error);
+    res.status(500).json({ message: "Erro no registro" });
   }
 };
 
-const bootstrapAdmin = async (req, res, next) => {
+exports.login = async (req, res) => {
   try {
-    const headerToken = req.headers['x-bootstrap-token'];
-    const bodyToken = req.body.bootstrapToken;
+    const { email, password } = req.body;
 
-    const user = await authService.bootstrapAdmin(req.body, headerToken || bodyToken);
-    return res.status(201).json({
-      message: 'Administrador criado com sucesso',
-      user: { id: user._id, nome: user.nome, email: user.email, role: user.role },
-    });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Usuário não encontrado" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Senha incorreta" });
+    }
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({ token, user });
   } catch (error) {
-    return next(error);
+    res.status(500).json({ message: "Erro no login" });
   }
-};
-
-const login = async (req, res, next) => {
-  try {
-    const { accessToken, refreshToken, user } = await authService.login(req.body);
-    return res.json({
-      accessToken,
-      refreshToken,
-      user: { id: user._id, nome: user.nome, email: user.email, role: user.role },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
-
-const refreshToken = async (req, res, next) => {
-  try {
-    const response = await authService.refresh(req.body.refreshToken);
-    return res.json(response);
-  } catch (error) {
-    return next(error);
-  }
-};
-
-module.exports = {
-  register,
-  bootstrapAdmin,
-  login,
-  refreshToken,
 };
