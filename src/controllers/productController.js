@@ -2,150 +2,55 @@
  * Controller: recebe requisições HTTP, valida entradas básicas e delega regras aos serviços/modelos.
  * Arquivo: src/controllers/productController.js
  */
-const Product = require('../models/Product');
-const { getActivePromotionsMap, toProductResponse } = require('../services/pricingService');
-const { ok, fail } = require('../utils/apiResponse');
+import Product from "../models/Product.js"
+import Promotion from "../models/Promotion.js"
 
-// Normaliza múltiplas variações de payload vindas de diferentes clientes/frontend.
-const normalizeProductPayload = (body = {}) => ({
-  name: body.name,
-  description: body.description,
-  imageUrl: body.imageUrl || body.image,
-  price: body.price,
-  stock: body.stock,
-});
-
-const createProduct = async (req, res, next) => {
+export const getProducts = async (req, res) => {
   try {
-    // Quando houver upload multipart, convertemos os arquivos enviados para caminhos públicos.
-    const imagePaths = (req.files || []).map((file) => `/uploads/${file.filename}`);
-    const payload = normalizeProductPayload(req.body);
+    const products = await Product.find()
+    const promotions = await Promotion.find({ active: true })
 
-    // Prioriza imageUrl explícita; caso não exista, usa a primeira imagem enviada no upload.
-    if (!payload.imageUrl) payload.imageUrl = imagePaths[0];
-    if (!payload.imageUrl || typeof payload.imageUrl !== 'string') {
-      return fail(res, 'imageUrl é obrigatório', 400);
-    }
+    const now = new Date()
 
-    payload.price = Number(payload.price);
-    payload.stock = payload.stock === undefined ? -1 : Number(payload.stock);
+    const formatted = products.map(product => {
+      const promo = promotions.find(p =>
+        p.productId.toString() === product._id.toString() &&
+        now >= p.startDate &&
+        now <= p.endDate
+      )
 
-    if (!payload.name || !payload.description || Number.isNaN(payload.price) || Number.isNaN(payload.stock)) {
-      return fail(res, 'Campos obrigatórios inválidos', 400);
-    }
+      let finalPrice = product.price
+      let hasPromotion = false
+      let discountPercentage = null
 
-    // O preço final com promoção é sempre calculado dinamicamente no retorno.
-    const product = await Product.create(payload);
-    return ok(res, toProductResponse(product, null), 201);
+      if (promo) {
+        finalPrice =
+          product.price -
+          (product.price * promo.discountPercentage) / 100
+
+        hasPromotion = true
+        discountPercentage = promo.discountPercentage
+      }
+
+      return {
+        id: product._id,
+        name: product.name,
+        description: product.description,
+        imageUrl: product.imageUrl,
+        price: product.price,
+        finalPrice,
+        hasPromotion,
+        discountPercentage,
+        stock: product.stock,
+        soldCount: product.soldCount
+      }
+    })
+
+    return res.json({ success: true, data: formatted })
   } catch (error) {
-    return next(error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao buscar produtos"
+    })
   }
-};
-
-const updateProduct = async (req, res, next) => {
-  try {
-    const payload = normalizeProductPayload(req.body);
-    Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
-
-    if (req.files?.length && !payload.imageUrl) {
-      payload.imageUrl = `/uploads/${req.files[0].filename}`;
-    }
-
-    if (payload.imageUrl !== undefined && (typeof payload.imageUrl !== 'string' || !payload.imageUrl.trim())) {
-      return fail(res, 'imageUrl inválida', 400);
-    }
-
-    if (payload.price !== undefined) payload.price = Number(payload.price);
-    if (payload.stock !== undefined) payload.stock = Number(payload.stock);
-
-    if ([payload.price, payload.stock].some((value) => value !== undefined && Number.isNaN(value))) {
-      return fail(res, 'Campos numéricos inválidos', 400);
-    }
-
-    const product = await Product.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
-    if (!product) return fail(res, 'Produto não encontrado', 404);
-
-    const promotionsMap = await getActivePromotionsMap([product._id]);
-    return ok(res, toProductResponse(product, promotionsMap.get(String(product._id))));
-  } catch (error) {
-    return next(error);
-  }
-};
-
-const getProductById = async (req, res, next) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return fail(res, 'Produto não encontrado', 404);
-
-    const promotionsMap = await getActivePromotionsMap([product._id]);
-    return ok(res, toProductResponse(product, promotionsMap.get(String(product._id))));
-  } catch (error) {
-    return next(error);
-  }
-};
-
-const getProducts = async (req, res, next) => {
-  try {
-    const { search, sort = 'maisVendidos', page = 1, limit = 10 } = req.query;
-    const filter = {};
-
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-      ];
-    }
-
-    const sortMap = {
-      precoAsc: { price: 1 },
-      precoDesc: { price: -1 },
-      maisRecentes: { createdAt: -1 },
-      maisVendidos: { soldCount: -1 },
-    };
-
-    const currentPage = Math.max(Number(page), 1);
-    const perPage = Math.max(Number(limit), 1);
-
-    // Faz contagem e listagem em paralelo para reduzir latência da rota.
-    const [totalItems, products] = await Promise.all([
-      Product.countDocuments(filter),
-      Product.find(filter)
-        .sort(sortMap[sort] || sortMap.maisVendidos)
-        .skip((currentPage - 1) * perPage)
-        .limit(perPage),
-    ]);
-
-    // Busca promoções ativas de uma vez para evitar N+1 queries.
-    const productIds = products.map((product) => product._id);
-    const promotionsMap = await getActivePromotionsMap(productIds);
-
-    const payload = {
-      totalItems,
-      totalPages: Math.ceil(totalItems / perPage),
-      currentPage,
-      products: products.map((product) => toProductResponse(product, promotionsMap.get(String(product._id)))),
-    };
-
-    return ok(res, payload);
-  } catch (error) {
-    return next(error);
-  }
-};
-
-const deleteProduct = async (req, res, next) => {
-  try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    if (!product) return fail(res, 'Produto não encontrado', 404);
-    return ok(res, { message: 'Produto removido com sucesso' });
-  } catch (error) {
-    return next(error);
-  }
-};
-
-module.exports = {
-  createProduct,
-  updateProduct,
-  getProductById,
-  getProducts,
-  deleteProduct,
-};
+}
