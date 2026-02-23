@@ -13,7 +13,7 @@ const router = express.Router();
 
 router.get('/me', authMiddleware, userController.getProfile);
 router.get('/profile', authMiddleware, userController.getUserProfile);
-router.put('/profile', authMiddleware, userController.updateUserProfile);
+router.put("/profile", authMiddleware, updateProfile)
 
 router.patch(
   '/:id/role',
@@ -23,5 +23,7 @@ router.patch(
   validateRequest,
   userController.updateUserRole
 );
+
+export default router
 
 module.exports = router;
