@@ -1,5 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const {
   getProducts,
@@ -11,9 +14,7 @@ const {
 const auth = require("../middlewares/authMiddleware");
 const admin = require("../middlewares/adminMiddleware");
 
-const multer = require("multer");
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+
 
 router.get("/", getProducts);
 router.get("/:id", getProductById);
