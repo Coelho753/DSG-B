@@ -80,6 +80,7 @@ exports.createProduct = async (req, res) => {
     res.status(500).json({ message: "Erro ao criar produto" });
   }
 };
+/*
 =====================================
 DELETE PRODUCT
 =====================================
