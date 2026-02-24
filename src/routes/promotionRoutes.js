@@ -1,22 +1,14 @@
 const express = require("express");
 const router = express.Router();
+const Promotion = require("../models/Promotion");
 
-const promotionController = require("../controllers/promotionController");
-const authMiddleware = require("../middlewares/authMiddleware");
-
-// Criar promoção
-router.post("/", authMiddleware, promotionController.createPromotion);
-
-// Listar promoções
-router.get("/", promotionController.getPromotions);
-
-// Buscar promoção por ID
-router.get("/:id", promotionController.getPromotionById);
-
-// Atualizar promoção
-router.put("/:id", authMiddleware, promotionController.updatePromotion);
-
-// Deletar promoção
-router.delete("/:id", authMiddleware, promotionController.deletePromotion);
+router.get("/", async (req, res) => {
+  try {
+    const promotions = await Promotion.find({ active: true });
+    res.json(promotions);
+  } catch {
+    res.status(500).json({ message: "Erro ao buscar promoções" });
+  }
+});
 
 module.exports = router;
