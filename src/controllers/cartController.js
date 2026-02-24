@@ -3,21 +3,27 @@ const Cart = require("../models/Cart");
 // Buscar carrinho do usuário logado
 exports.getCart = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.user.id })
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
+
+    let cart = await Cart.findOne({ user: req.user.id })
       .populate("items.product");
 
     if (!cart) {
-      return res.json({ items: [] });
+      cart = await Cart.create({
+        user: req.user.id,
+        items: []
+      });
     }
 
     res.json(cart);
 
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao buscar carrinho:", error);
     res.status(500).json({ message: "Erro ao buscar carrinho" });
   }
 };
-
 // Adicionar produto ao carrinho
 exports.addToCart = async (req, res) => {
   try {
