@@ -16,6 +16,10 @@ const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
 const promotionRoutes = require("./routes/promotionRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const cartRoutes = require("./routes/cartRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+
+
 
 // USA ROTAS
 app.use("/api/auth", authRoutes);
@@ -24,6 +28,9 @@ app.use("/api/products", productRoutes);
 app.use("/api/promotions", promotionRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/uploads", express.static("uploads"));
+app.use("/api/cart", cartRoutes);
+app.use("/api/categories", categoryRoutes);
+
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB conectado"))
