@@ -1,7 +1,7 @@
 const User = require("../models/User");
 
 // Buscar usuário logado
-exports.getMe = async (req, res) => {
+const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
 
@@ -10,7 +10,6 @@ exports.getMe = async (req, res) => {
     }
 
     res.json(user);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Erro ao buscar usuário" });
@@ -18,7 +17,7 @@ exports.getMe = async (req, res) => {
 };
 
 // Atualizar perfil
-exports.updateMe = async (req, res) => {
+const updateMe = async (req, res) => {
   try {
     const { name } = req.body;
 
@@ -29,8 +28,13 @@ exports.updateMe = async (req, res) => {
     ).select("-password");
 
     res.json(user);
-
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Erro ao atualizar usuário" });
   }
+};
+
+module.exports = {
+  getMe,
+  updateMe,
 };
