@@ -47,48 +47,39 @@ exports.createProduct = async (req, res) => {
 
     let imageUrl = "";
 
-    // Se tiver imagem enviada
     if (req.file) {
-      const result = await cloudinary.uploader.upload_stream(
-        { resource_type: "image" },
-        async (error, result) => {
-          if (error) {
-            console.error("Erro no Cloudinary:", error);
-            return res.status(500).json({ message: "Erro no upload da imagem" });
-          }
+      const streamUpload = () => {
+        return new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { resource_type: "image" },
+            (error, result) => {
+              if (result) resolve(result);
+              else reject(error);
+            }
+          );
+          stream.end(req.file.buffer);
+        });
+      };
 
-          const product = await Product.create({
-            name,
-            price,
-            description,
-            category,
-            image: result.secure_url,
-          });
-
-          return res.status(201).json(product);
-        }
-      );
-
-      result.end(req.file.buffer);
-      return;
+      const result = await streamUpload();
+      imageUrl = result.secure_url;
     }
 
-    // Se não tiver imagem
     const product = await Product.create({
       name,
       price,
       description,
       category,
+      image: imageUrl,
     });
 
     res.status(201).json(product);
+
   } catch (error) {
     console.error("Erro ao criar produto:", error);
     res.status(500).json({ message: "Erro ao criar produto" });
   }
 };
-
-/*
 =====================================
 DELETE PRODUCT
 =====================================
