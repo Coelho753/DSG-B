@@ -1,51 +1,19 @@
-/**
- * Model: define o schema/estrutura persistida no MongoDB via Mongoose.
- * Arquivo: src/models/User.js
- */
-const mongoose = require('mongoose');
-
-const enderecoSchema = new mongoose.Schema(
-  {
-    rua: { type: String, trim: true },
-    numero: { type: String, trim: true },
-    complemento: { type: String, trim: true },
-    bairro: { type: String, trim: true },
-    cidade: { type: String, trim: true },
-    estado: { type: String, trim: true },
-    cep: { type: String, trim: true },
-  },
-  { _id: false }
-);
-
-const addressSchema = new mongoose.Schema(
-  {
-    street: { type: String, trim: true },
-    number: { type: String, trim: true },
-    city: { type: String, trim: true },
-    state: { type: String, trim: true },
-    zipCode: { type: String, trim: true },
-    complement: { type: String, trim: true },
-  },
-  { _id: false }
-);
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  nome: { type: String, required: true, trim: true, index: true },
-  email: { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
-  senha: { type: String, required: true },
-  role: {
+  name: {
     type: String,
-    enum: ['user', 'admin', 'seller', 'distribuidor', 'revendedor'],
-    default: 'user',
-    index: true,
+    required: true,
   },
-  endereco: { type: enderecoSchema, default: {} },
-  address: { type: addressSchema, default: {} },
-  themePreference: { type: String, enum: ['light', 'dark-gold'], default: 'light' },
-  idioma: { type: String, default: 'pt' },
-  tema: { type: String, default: 'light' },
-  ativo: { type: Boolean, default: true, index: true },
-  criadoEm: { type: Date, default: Date.now, index: true },
-});
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+}, { timestamps: true });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);
