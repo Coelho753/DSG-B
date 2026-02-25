@@ -6,6 +6,13 @@ const productSchema = new mongoose.Schema(
     price: { type: Number, required: true },
     description: String,
     image: String,
+
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
