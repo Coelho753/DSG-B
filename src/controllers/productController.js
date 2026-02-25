@@ -3,6 +3,20 @@ const cloudinary = require("../config/cloudinary");
 
 /*
 =====================================
+FUNÇÃO INTERNA PARA GERAR SLUG
+=====================================
+*/
+const slugify = (text) =>
+  text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w\-]+/g, "")
+    .replace(/\-\-+/g, "-");
+
+/*
+=====================================
 GET ALL PRODUCTS
 =====================================
 */
@@ -41,24 +55,27 @@ exports.getProductById = async (req, res) => {
 CREATE PRODUCT
 =====================================
 */
-
 exports.createProduct = async (req, res) => {
   try {
     const { name, price, description, category } = req.body;
 
+    if (!name || !price) {
+      return res.status(400).json({
+        message: "Nome e preço são obrigatórios",
+      });
+    }
+
     let imageUrl = "";
 
-    // Só tenta usar Cloudinary se houver arquivo E variáveis configuradas
+    // Upload para Cloudinary se houver imagem
     if (
       req.file &&
-      process.env.CLOUDINARY_CLOUD_NAME &&
-      process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_API_SECRET
+      process.env.CLOUDINARY_NAME &&
+      process.env.CLOUDINARY_KEY &&
+      process.env.CLOUDINARY_SECRET
     ) {
-      const cloudinary = require("../config/cloudinary");
-
-      const streamUpload = () => {
-        return new Promise((resolve, reject) => {
+      const streamUpload = () =>
+        new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
             { resource_type: "image" },
             (error, result) => {
@@ -68,11 +85,13 @@ exports.createProduct = async (req, res) => {
           );
           stream.end(req.file.buffer);
         });
-      };
 
       const result = await streamUpload();
       imageUrl = result.secure_url;
     }
+
+    // 🔥 Geração automática de slug único
+    const slug = `${slugify(name)}-${Date.now()}`;
 
     const product = await Product.create({
       name,
@@ -80,6 +99,7 @@ exports.createProduct = async (req, res) => {
       description,
       category,
       image: imageUrl,
+      slug,
     });
 
     res.status(201).json(product);
@@ -100,8 +120,18 @@ DELETE PRODUCT
 */
 exports.deleteProduct = async (req, res) => {
   try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        message: "Produto não encontrado",
+      });
+    }
+
     await Product.findByIdAndDelete(req.params.id);
-    res.json({ message: "Produto deletado" });
+
+    res.json({ message: "Produto deletado com sucesso" });
+
   } catch (error) {
     console.error("Erro ao deletar produto:", error);
     res.status(500).json({ message: "Erro ao deletar produto" });
