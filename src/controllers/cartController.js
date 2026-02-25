@@ -4,6 +4,7 @@ const Cart = require("../models/Cart");
 exports.getCart = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
+      console.log("Usuário inválido:", req.user);
       return res.status(401).json({ message: "Usuário não autenticado" });
     }
 
@@ -17,13 +18,17 @@ exports.getCart = async (req, res) => {
       });
     }
 
-    res.json(cart);
+    return res.json(cart);
 
   } catch (error) {
-    console.error("Erro ao buscar carrinho:", error);
-    res.status(500).json({ message: "Erro ao buscar carrinho" });
+    console.error("ERRO REAL DO CARRINHO:", error);
+    return res.status(500).json({
+      message: "Erro ao buscar carrinho",
+      error: error.message
+    });
   }
 };
+
 // Adicionar produto ao carrinho
 exports.addToCart = async (req, res) => {
   try {
