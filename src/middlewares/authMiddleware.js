@@ -18,17 +18,12 @@ module.exports = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Compatível com id ou _id
-    req.user = {
-      id: decoded.id || decoded._id
-    };
-
+req.user = {
+  id: decoded.id || decoded._id,
+  role: decoded.role
+};
     if (!req.user.id) {
       return res.status(401).json({ message: "Token inválido" });
     }
 
-    next();
-  } catch (error) {
-    return res.status(401).json({ message: "Token inválido ou expirado" });
-  }
-};
+    
