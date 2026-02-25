@@ -5,16 +5,16 @@ const auth = require("../middlewares/authMiddleware");
 
 router.get("/", auth, async (req, res) => {
   try {
-    if (!req.user || !req.user._id) {
+    if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Usuário não autenticado" });
     }
 
-    let cart = await Cart.findOne({ user: req.user._id })
+    let cart = await Cart.findOne({ user: req.user.id })
       .populate("items.product");
 
     if (!cart) {
       cart = await Cart.create({
-        user: req.user._id,
+        user: req.user.id,
         items: [],
       });
     }
@@ -25,5 +25,6 @@ router.get("/", auth, async (req, res) => {
     res.status(500).json({ message: "Erro ao buscar carrinho" });
   }
 });
+    
 
 module.exports = router;
