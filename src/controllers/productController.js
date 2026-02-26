@@ -71,27 +71,33 @@ exports.createProduct = async (req, res) => {
     let imageUrl = "";
 
     // Upload para Cloudinary se houver imagem
-    if (
-      req.file &&
-      process.env.CLOUDINARY_NAME &&
-      process.env.CLOUDINARY_KEY &&
-      process.env.CLOUDINARY_SECRET
-    ) {
-      const streamUpload = () =>
-        new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { resource_type: "image" },
-            (error, result) => {
-              if (result) resolve(result);
-              else reject(error);
-            }
-          );
-          stream.end(req.file.buffer);
-        });
 
-      const result = await streamUpload();
-      imageUrl = result.secure_url;
-    }
+    if (req.file) {
+  console.log("Arquivo recebido, iniciando upload...");
+
+  const streamUpload = () =>
+    new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { resource_type: "image" },
+        (error, result) => {
+          if (error) {
+            console.log("ERRO CLOUDINARY:", error);
+            reject(error);
+          } else {
+            console.log("Upload feito com sucesso!");
+            console.log("URL gerada:", result.secure_url);
+            resolve(result);
+          }
+        }
+      );
+      stream.end(req.file.buffer);
+    });
+
+  const result = await streamUpload();
+  imageUrl = result.secure_url;
+} else {
+  console.log("Nenhum arquivo recebido.");
+}
 
     // 🔥 Geração automática de slug único
     const slug = `${slugify(name)}-${Date.now()}`;
