@@ -57,6 +57,9 @@ CREATE PRODUCT
 */
 exports.createProduct = async (req, res) => {
   try {
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file); 
+
     const { name, price, description, category } = req.body;
 
     if (!name || !price) {
