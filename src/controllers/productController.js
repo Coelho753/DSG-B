@@ -1,4 +1,5 @@
 const Product = require("../models/Product");
+const Promotion = require("../models/Promotion");
 const cloudinary = require("../config/cloudinary");
 
 /*
@@ -17,13 +18,63 @@ const slugify = (text) =>
 
 /*
 =====================================
-GET ALL PRODUCTS
+GET ALL PRODUCTS (COM PROMOÇÃO)
 =====================================
 */
 exports.getProducts = async (req, res) => {
   try {
     const products = await Product.find();
-    res.json(products);
+
+    const today = new Date();
+
+    const promotions = await Promotion.find({
+      active: true,
+      startDate: { $lte: today },
+      endDate: { $gte: today },
+    });
+
+    const updatedProducts = products.map((product) => {
+      let finalPrice = product.price;
+      let appliedPromotion = null;
+
+      const promotion = promotions.find((promo) => {
+        const productMatch =
+          promo.product &&
+          promo.product.toString() === product._id.toString();
+
+        const categoryMatch =
+          promo.category &&
+          promo.category.toString() ===
+            (product.category ? product.category.toString() : null);
+
+        return productMatch || categoryMatch;
+      });
+
+      if (promotion) {
+        appliedPromotion = promotion;
+
+        if (promotion.type === "percentage") {
+          finalPrice =
+            product.price - product.price * (promotion.value / 100);
+        }
+
+        if (promotion.type === "fixed") {
+          finalPrice = product.price - promotion.value;
+        }
+
+        if (finalPrice < 0) finalPrice = 0;
+      }
+
+      return {
+        ...product.toObject(),
+        originalPrice: product.price,
+        finalPrice,
+        promotion: appliedPromotion,
+      };
+    });
+
+    res.json(updatedProducts);
+
   } catch (error) {
     console.error("Erro ao buscar produtos:", error);
     res.status(500).json({ message: "Erro ao buscar produtos" });
@@ -32,7 +83,7 @@ exports.getProducts = async (req, res) => {
 
 /*
 =====================================
-GET PRODUCT BY ID
+GET PRODUCT BY ID (COM PROMOÇÃO)
 =====================================
 */
 exports.getProductById = async (req, res) => {
@@ -43,7 +94,40 @@ exports.getProductById = async (req, res) => {
       return res.status(404).json({ message: "Produto não encontrado" });
     }
 
-    res.json(product);
+    const today = new Date();
+
+    const promotion = await Promotion.findOne({
+      active: true,
+      startDate: { $lte: today },
+      endDate: { $gte: today },
+      $or: [
+        { product: product._id },
+        { category: product.category },
+      ],
+    });
+
+    let finalPrice = product.price;
+
+    if (promotion) {
+      if (promotion.type === "percentage") {
+        finalPrice =
+          product.price - product.price * (promotion.value / 100);
+      }
+
+      if (promotion.type === "fixed") {
+        finalPrice = product.price - promotion.value;
+      }
+
+      if (finalPrice < 0) finalPrice = 0;
+    }
+
+    res.json({
+      ...product.toObject(),
+      originalPrice: product.price,
+      finalPrice,
+      promotion: promotion || null,
+    });
+
   } catch (error) {
     console.error("Erro ao buscar produto:", error);
     res.status(500).json({ message: "Erro ao buscar produto" });
@@ -57,9 +141,6 @@ CREATE PRODUCT
 */
 exports.createProduct = async (req, res) => {
   try {
-    console.log("BODY:", req.body);
-    console.log("FILE:", req.file); 
-
     const { name, price, description, category } = req.body;
 
     if (!name || !price) {
@@ -70,36 +151,23 @@ exports.createProduct = async (req, res) => {
 
     let imageUrl = "";
 
-    // Upload para Cloudinary se houver imagem
-
     if (req.file) {
-  console.log("Arquivo recebido, iniciando upload...");
+      const streamUpload = () =>
+        new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { resource_type: "image" },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          stream.end(req.file.buffer);
+        });
 
-  const streamUpload = () =>
-    new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { resource_type: "image" },
-        (error, result) => {
-          if (error) {
-            console.log("ERRO CLOUDINARY:", error);
-            reject(error);
-          } else {
-            console.log("Upload feito com sucesso!");
-            console.log("URL gerada:", result.secure_url);
-            resolve(result);
-          }
-        }
-      );
-      stream.end(req.file.buffer);
-    });
+      const result = await streamUpload();
+      imageUrl = result.secure_url;
+    }
 
-  const result = await streamUpload();
-  imageUrl = result.secure_url;
-} else {
-  console.log("Nenhum arquivo recebido.");
-}
-
-    // 🔥 Geração automática de slug único
     const slug = `${slugify(name)}-${Date.now()}`;
 
     const product = await Product.create({
@@ -114,11 +182,8 @@ exports.createProduct = async (req, res) => {
     res.status(201).json(product);
 
   } catch (error) {
-    console.error("Erro detalhado ao criar produto:", error);
-    res.status(500).json({
-      message: "Erro ao criar produto",
-      error: error.message,
-    });
+    console.error("Erro ao criar produto:", error);
+    res.status(500).json({ message: "Erro ao criar produto" });
   }
 };
 
