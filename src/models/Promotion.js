@@ -2,9 +2,48 @@ const mongoose = require("mongoose");
 
 const promotionSchema = new mongoose.Schema(
   {
-    title: String,
-    discount: Number,
-    active: { type: Boolean, default: true },
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    type: {
+      type: String,
+      enum: ["percentage", "fixed"],
+      required: true,
+    },
+
+    value: {
+      type: Number,
+      required: true,
+    },
+
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      default: null,
+    },
+
+    category: {
+      type: String,
+      default: null,
+    },
+
+    startDate: {
+      type: Date,
+      required: true,
+    },
+
+    endDate: {
+      type: Date,
+      required: true,
+    },
+
+    active: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );
