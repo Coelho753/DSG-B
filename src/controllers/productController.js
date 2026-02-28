@@ -24,7 +24,6 @@ GET ALL PRODUCTS (COM PROMOÇÃO)
 exports.getProducts = async (req, res) => {
   try {
     const products = await Product.find();
-
     const today = new Date();
 
     const promotions = await Promotion.find({
@@ -37,29 +36,34 @@ exports.getProducts = async (req, res) => {
       let finalPrice = product.price;
       let appliedPromotion = null;
 
-      const promotion = promotions.find((promo) => {
-        const productMatch =
+      // 1️⃣ PRIORIDADE: promoção específica de produto
+      const productPromotion = promotions.find(
+        (promo) =>
           promo.product &&
-          promo.product.toString() === product._id.toString();
+          promo.product.toString() === product._id.toString()
+      );
 
-        const categoryMatch =
+      // 2️⃣ Se não houver, tenta categoria
+      const categoryPromotion = promotions.find(
+        (promo) =>
+          !productPromotion &&
           promo.category &&
-          promo.category.toString() ===
-            (product.category ? product.category.toString() : null);
+          product.category &&
+          promo.category.toString() === product.category.toString()
+      );
 
-        return productMatch || categoryMatch;
-      });
+      appliedPromotion = productPromotion || categoryPromotion || null;
 
-      if (promotion) {
-        appliedPromotion = promotion;
-
-        if (promotion.type === "percentage") {
+      if (appliedPromotion) {
+        if (appliedPromotion.type === "percentage") {
           finalPrice =
-            product.price - product.price * (promotion.value / 100);
+            product.price -
+            product.price * (appliedPromotion.value / 100);
         }
 
-        if (promotion.type === "fixed") {
-          finalPrice = product.price - promotion.value;
+        if (appliedPromotion.type === "fixed") {
+          finalPrice =
+            product.price - appliedPromotion.value;
         }
 
         if (finalPrice < 0) finalPrice = 0;
@@ -70,6 +74,7 @@ exports.getProducts = async (req, res) => {
         originalPrice: product.price,
         finalPrice,
         promotion: appliedPromotion,
+        hasPromotion: !!appliedPromotion,
       };
     });
 
@@ -80,7 +85,6 @@ exports.getProducts = async (req, res) => {
     res.status(500).json({ message: "Erro ao buscar produtos" });
   }
 };
-
 /*
 =====================================
 GET PRODUCT BY ID (COM PROMOÇÃO)
@@ -91,31 +95,50 @@ exports.getProductById = async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (!product) {
-      return res.status(404).json({ message: "Produto não encontrado" });
+      return res.status(404).json({
+        message: "Produto não encontrado",
+      });
     }
 
     const today = new Date();
 
-    const promotion = await Promotion.findOne({
+    const promotions = await Promotion.find({
       active: true,
       startDate: { $lte: today },
       endDate: { $gte: today },
-      $or: [
-        { product: product._id },
-        { category: product.category },
-      ],
     });
+
+    // 1️⃣ Promoção de produto
+    const productPromotion = promotions.find(
+      (promo) =>
+        promo.product &&
+        promo.product.toString() === product._id.toString()
+    );
+
+    // 2️⃣ Promoção de categoria
+    const categoryPromotion = promotions.find(
+      (promo) =>
+        !productPromotion &&
+        promo.category &&
+        product.category &&
+        promo.category.toString() === product.category.toString()
+    );
+
+    const appliedPromotion =
+      productPromotion || categoryPromotion || null;
 
     let finalPrice = product.price;
 
-    if (promotion) {
-      if (promotion.type === "percentage") {
+    if (appliedPromotion) {
+      if (appliedPromotion.type === "percentage") {
         finalPrice =
-          product.price - product.price * (promotion.value / 100);
+          product.price -
+          product.price * (appliedPromotion.value / 100);
       }
 
-      if (promotion.type === "fixed") {
-        finalPrice = product.price - promotion.value;
+      if (appliedPromotion.type === "fixed") {
+        finalPrice =
+          product.price - appliedPromotion.value;
       }
 
       if (finalPrice < 0) finalPrice = 0;
@@ -125,7 +148,8 @@ exports.getProductById = async (req, res) => {
       ...product.toObject(),
       originalPrice: product.price,
       finalPrice,
-      promotion: promotion || null,
+      promotion: appliedPromotion,
+      hasPromotion: !!appliedPromotion,
     });
 
   } catch (error) {
