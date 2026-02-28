@@ -1,71 +1,50 @@
 const express = require("express");
 const router = express.Router();
-const Promotion = require("../models/Promotion");
+
 const auth = require("../middlewares/authMiddleware");
+const promotionController = require("../controllers/promotionController");
 
-// 🔹 LISTAR promoções ativas
-router.get("/", async (req, res) => {
-  try {
-    const promotions = await Promotion.find({ active: true });
-    res.json(promotions);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erro ao buscar promoções" });
-  }
-});
+/*
+=================================================
+LISTAR TODAS AS PROMOÇÕES
+=================================================
+*/
+router.get("/", promotionController.getAllPromotions);
 
-// 🔹 CRIAR promoção
-router.post("/", auth, async (req, res) => {
-  try {
-    const { title, discount, active } = req.body;
+/*
+=================================================
+LISTAR PROMOÇÕES ATIVAS (FILTRADAS POR DATA)
+Opcional: /api/promotions/active
+=================================================
+*/
+router.get("/active", promotionController.getActivePromotions);
 
-    const promotion = await Promotion.create({
-      title,
-      discount,
-      active
-    });
+/*
+=================================================
+BUSCAR PROMOÇÃO POR ID
+=================================================
+*/
+router.get("/:id", promotionController.getPromotionById);
 
-    res.status(201).json(promotion);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erro ao criar promoção" });
-  }
-});
+/*
+=================================================
+CRIAR PROMOÇÃO (PROTEGIDO)
+=================================================
+*/
+router.post("/", auth, promotionController.createPromotion);
 
-// 🔹 ATUALIZAR promoção
-router.put("/:id", auth, async (req, res) => {
-  try {
-    const promotion = await Promotion.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+/*
+=================================================
+ATUALIZAR PROMOÇÃO
+=================================================
+*/
+router.put("/:id", auth, promotionController.updatePromotion);
 
-    if (!promotion) {
-      return res.status(404).json({ message: "Promoção não encontrada" });
-    }
-
-    res.json(promotion);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erro ao atualizar promoção" });
-  }
-});
-
-// 🔹 DELETAR promoção
-router.delete("/:id", auth, async (req, res) => {
-  try {
-    const promotion = await Promotion.findByIdAndDelete(req.params.id);
-
-    if (!promotion) {
-      return res.status(404).json({ message: "Promoção não encontrada" });
-    }
-
-    res.json({ message: "Promoção removida com sucesso" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erro ao deletar promoção" });
-  }
-});
+/*
+=================================================
+DELETAR PROMOÇÃO
+=================================================
+*/
+router.delete("/:id", auth, promotionController.deletePromotion);
 
 module.exports = router;
