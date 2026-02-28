@@ -8,49 +8,80 @@ Aceita campos PT/EN e gera title automático
 */
 exports.createPromotion = async (req, res) => {
   try {
-    // Normalização bilíngue
-    const type =
-      req.body.type ||
-      req.body.discountType ||
-      req.body.tipoDesconto;
+    const {
+      title,
+      type,
+      value,
+      product,
+      category,
+      startDate,
+      endDate,
+      hasTime,
+      startTime,
+      endTime,
+    } = req.body;
 
-    const value =
-      req.body.value ||
-      req.body.discountValue ||
-      req.body.valorDesconto;
+    if (!title || !type || !value || !startDate || !endDate) {
+      return res.status(400).json({
+        message: "Campos obrigatórios não preenchidos",
+      });
+    }
 
-    const product =
-      req.body.product ||
-      req.body.productId ||
-      req.body.produto ||
-      null;
+    if (type === "percentage" && (value <= 0 || value > 100)) {
+      return res.status(400).json({
+        message: "Percentual deve ser entre 1 e 100",
+      });
+    }
 
-    const category =
-      req.body.category ||
-      req.body.categoria ||
-      null;
+    if (type === "fixed" && value <= 0) {
+      return res.status(400).json({
+        message: "Valor fixo deve ser maior que zero",
+      });
+    }
 
-    const startDate =
-      req.body.startDate ||
-      req.body.dataInicio;
+    let start = new Date(startDate);
+    let end = new Date(endDate);
 
-    const endDate =
-      req.body.endDate ||
-      req.body.dataFim;
+    if (hasTime && startTime && endTime) {
+      // aplica horário específico
+      const [startHour, startMinute] = startTime.split(":");
+      const [endHour, endMinute] = endTime.split(":");
 
-    const active =
-      req.body.active !== undefined
-        ? req.body.active
-        : req.body.ativa !== undefined
-        ? req.body.ativa
-        : true;
+      start.setHours(startHour, startMinute, 0, 0);
+      end.setHours(endHour, endMinute, 59, 999);
+    } else {
+      // promoção por dia inteiro
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+    }
 
-    // Geração automática de título se não vier
-    const title =
-      req.body.title ||
-      req.body.titulo ||
-      `Promoção ${type === "percentage" ? value + "%" : "R$ " + value}`;
+    if (start > end) {
+      return res.status(400).json({
+        message: "Data inicial não pode ser maior que data final",
+      });
+    }
 
+    const promotion = await Promotion.create({
+      title,
+      type,
+      value,
+      product: product || null,
+      category: category || null,
+      startDate: start,
+      endDate: end,
+      hasTime: hasTime || false,
+      startTime: hasTime ? startTime : null,
+      endTime: hasTime ? endTime : null,
+      active: true,
+    });
+
+    res.status(201).json(promotion);
+
+  } catch (error) {
+    console.error("Erro ao criar promoção:", error);
+    res.status(500).json({ message: "Erro ao criar promoção" });
+  }
+};
     /*
     ==========================
     VALIDAÇÕES
