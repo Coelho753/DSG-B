@@ -1,13 +1,67 @@
 const Promotion = require("../models/Promotion");
 
 // Criar
+const Promotion = require("../models/Promotion");
+
 exports.createPromotion = async (req, res) => {
   try {
-    const promotion = await Promotion.create(req.body);
+    const {
+      type,
+      value,
+      startDate,
+      endDate,
+      product,
+      category,
+    } = req.body;
+
+    /*
+    =============================
+    VALIDAÇÕES SEGURAS
+    =============================
+    */
+
+    if (!type || !value) {
+      return res.status(400).json({
+        message: "Tipo e valor são obrigatórios",
+      });
+    }
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        message: "Datas são obrigatórias",
+      });
+    }
+
+    if (new Date(endDate) < new Date(startDate)) {
+      return res.status(400).json({
+        message: "Data final não pode ser menor que inicial",
+      });
+    }
+
+    if (!product && !category) {
+      return res.status(400).json({
+        message: "Informe produto ou categoria",
+      });
+    }
+
+    const promotion = await Promotion.create({
+      type,
+      value: Number(value),
+      startDate,
+      endDate,
+      product: product || null,
+      category: category || null,
+      active: true,
+    });
+
     res.status(201).json(promotion);
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erro ao criar promoção" });
+    console.error("ERRO DETALHADO PROMOTION:", error);
+    res.status(500).json({
+      message: "Erro ao criar promoção",
+      error: error.message,
+    });
   }
 };
 
