@@ -40,6 +40,21 @@ const promotionSchema = new mongoose.Schema(
       required: true,
     },
 
+    hasTime: {
+  type: Boolean,
+  default: false,
+},
+
+startTime: {
+  type: String,
+  default: null,
+},
+
+endTime: {
+  type: String,
+  default: null,
+},
+
     active: {
       type: Boolean,
       default: true,
