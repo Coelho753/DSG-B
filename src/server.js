@@ -9,6 +9,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const promotionRoutes = require("./routes/promotionRoutes");
 const userRoutes = require("./routes/userRoutes");
 const cartRoutes = require("./routes/cartRoutes");
+
 const startTrackingJob = require("./jobs/trackingJob");
 
 const app = express();
@@ -16,16 +17,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB conectado"))
-  .catch(err => console.log(err));
-
+// 🔹 ROTAS
 app.use("/api/auth", authRoutes);
 app.use("/api/promotions", promotionRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/cart", cartRoutes);
-
 app.use("/api/categories", categoryRoutes);
 
 app.get("/", (req, res) => {
@@ -38,4 +35,18 @@ app.get("/health", (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log("Servidor rodando"));
+// 🔹 CONECTA AO BANCO E SÓ DEPOIS INICIA SERVIDOR + JOB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB conectado");
+
+    // 🔥 Inicia o job de rastreio
+    startTrackingJob();
+
+    app.listen(PORT, () => {
+      console.log(`Servidor rodando na porta ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error("Erro ao conectar no MongoDB:", err);
+  });
