@@ -9,6 +9,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const promotionRoutes = require("./routes/promotionRoutes");
 const userRoutes = require("./routes/userRoutes");
 const cartRoutes = require("./routes/cartRoutes");
+const startTrackingJob = require("./jobs/trackingJob");
 
 const app = express();
 
