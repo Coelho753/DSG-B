@@ -7,7 +7,18 @@ const BASE_URL = process.env.MELHOR_ENVIO_BASE_URL;
 async function saveToken(data) {
   const expiresAt = new Date(Date.now() + data.expires_in * 1000);
 
-  await MelhorEnvioToken.deleteMany({});
+  async function saveToken(data) {
+  const expiresAt = new Date(Date.now() + data.expires_in * 1000);
+
+  await MelhorEnvioToken.findOneAndUpdate(
+    {},
+    {
+      accessToken: data.access_token,
+      expiresAt,
+    },
+    { upsert: true, new: true }
+  );
+}
 
   await MelhorEnvioToken.create({
     accessToken: data.access_token,
