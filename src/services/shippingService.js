@@ -1,40 +1,63 @@
-const axios = require("axios");
+const Shipment = require('../models/Shipment');
+const { melhorEnvioRequest } = require('./melhorEnvioService');
 
-const baseURL = process.env.MELHOR_ENVIO_BASE;
-
-const api = axios.create({
-  baseURL,
-  headers: {
-    Authorization: `Bearer ${process.env.MELHOR_ENVIO_TOKEN}`,
-    "Content-Type": "application/json",
-  },
-});
-
-exports.calculateShipping = async ({ zipcode, products }) => {
-  try {
-
-    const response = await api.post("/me/shipment/calculate", {
+async function gerarEtiqueta(order) {
+  // 1️⃣ Criar envio
+  const response = await melhorEnvioRequest(
+    "POST",
+    "/api/v2/me/shipment",
+    {
+      service: order.shippingServiceId,
       from: {
-        postal_code: "01001000", // CEP da sua loja
+        postal_code: process.env.STORE_POSTAL_CODE,
       },
       to: {
-        postal_code: zipcode,
+        postal_code: order.shippingAddress.postalCode,
+        name: order.user.name,
       },
-      products: products.map(p => ({
-        id: p._id,
-        width: p.width,
-        height: p.height,
-        length: p.length,
-        weight: p.weight,
-        insurance_value: p.price,
-        quantity: p.quantity,
+      products: order.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        unitary_value: item.unitPrice,
+        weight: 0.3,
+        width: 15,
+        height: 10,
+        length: 20,
       })),
-    });
+    }
+  );
 
-    return response.data;
+  const shipmentId = response.data.id;
 
-  } catch (error) {
-    console.error("Erro cálculo frete:", error.response?.data || error);
-    throw new Error("Erro ao calcular frete");
-  }
-};
+  // 2️⃣ Comprar etiqueta
+  await melhorEnvioRequest(
+    "POST",
+    "/api/v2/me/shipment/checkout",
+    { orders: [shipmentId] }
+  );
+
+  // 3️⃣ Gerar etiqueta
+  await melhorEnvioRequest(
+    "POST",
+    "/api/v2/me/shipment/generate",
+    { orders: [shipmentId] }
+  );
+
+  // 4️⃣ Buscar dados do envio
+  const shipmentData = await melhorEnvioRequest(
+    "GET",
+    `/api/v2/me/shipment/${shipmentId}`
+  );
+
+  await Shipment.create({
+    orderId: order._id,
+    melhorEnvioId: shipmentId,
+    trackingCode: shipmentData.data.tracking,
+    status: shipmentData.data.status,
+  });
+
+  order.shipmentStatus = shipmentData.data.status;
+  await order.save();
+}
+
+module.exports = { gerarEtiqueta };
