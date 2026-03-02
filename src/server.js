@@ -14,8 +14,11 @@ const orderRoutes = require("./routes/orderRoutes");
 
 
 
-
 const startTrackingJob = require("./jobs/trackingJob");
+
+const { startTrackingCron } = require('./jobs/trackingCron');
+
+startTrackingCron();
 
 const app = express();
 
