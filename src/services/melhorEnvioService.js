@@ -17,21 +17,30 @@ async function saveToken(data) {
 
 // 🔹 Gera novo token
 async function generateToken() {
-  const response = await axios.post(
-    `${BASE_URL}/oauth/token`,
-    new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: process.env.MELHOR_ENVIO_CLIENT_ID,
-      client_secret: process.env.MELHOR_ENVIO_CLIENT_SECRET,
-    }),
-    {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    }
-  );
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/oauth/token`,
+      new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: process.env.MELHOR_ENVIO_CLIENT_ID,
+        client_secret: process.env.MELHOR_ENVIO_CLIENT_SECRET,
+      }),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        timeout: 10000,
+      }
+    );
 
-  await saveToken(response.data);
+    await saveToken(response.data);
 
-  return response.data.access_token;
+    return response.data.access_token;
+
+  } catch (error) {
+    console.error("Erro ao gerar token Melhor Envio:", error.response?.data || error.message);
+    throw new Error("Falha na autenticação com Melhor Envio");
+  }
 }
 
 // 🔹 Retorna token válido automaticamente
