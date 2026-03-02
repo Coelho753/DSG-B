@@ -11,6 +11,8 @@ const userRoutes = require("./routes/userRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const freteRoutes = require("./routes/freteRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+
 
 
 
@@ -34,6 +36,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/frete", freteRoutes);
 app.use("/api/order", orderRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.get("/", (req, res) => {
   res.send("API funcionando");
