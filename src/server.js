@@ -10,6 +10,9 @@ const promotionRoutes = require("./routes/promotionRoutes");
 const userRoutes = require("./routes/userRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const freteRoutes = require("./routes/freteRoutes");
+const orderRoutes = require("./routes/orderRoutes");
+
+
 
 
 const startTrackingJob = require("./jobs/trackingJob");
@@ -27,6 +30,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/frete", freteRoutes);
+app.use("/api/order", orderRoutes);
 
 app.get("/", (req, res) => {
   res.send("API funcionando");
