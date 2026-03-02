@@ -9,6 +9,8 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const promotionRoutes = require("./routes/promotionRoutes");
 const userRoutes = require("./routes/userRoutes");
 const cartRoutes = require("./routes/cartRoutes");
+const freteRoutes = require("./routes/freteRoutes");
+
 
 const startTrackingJob = require("./jobs/trackingJob");
 
@@ -24,6 +26,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/frete", freteRoutes);
 
 app.get("/", (req, res) => {
   res.send("API funcionando");
