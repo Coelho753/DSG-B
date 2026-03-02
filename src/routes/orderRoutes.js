@@ -14,5 +14,6 @@ router.use(authMiddleware);
 router.post('/', createOrderValidator, validateRequest, orderController.createOrder);
 router.post('/checkout', orderController.checkoutCart);
 router.get('/my-orders', orderController.getMyOrders);
+router.post("/confirmar", orderController.confirmarPedido);
 
 module.exports = router;
