@@ -3,11 +3,8 @@ const MelhorEnvioToken = require("../models/MelhorEnvioToken");
 
 const BASE_URL = process.env.MELHOR_ENVIO_BASE_URL;
 
-// 🔹 Salva token no banco
+// 🔹 Salva ou atualiza token no banco
 async function saveToken(data) {
-  const expiresAt = new Date(Date.now() + data.expires_in * 1000);
-
-  async function saveToken(data) {
   const expiresAt = new Date(Date.now() + data.expires_in * 1000);
 
   await MelhorEnvioToken.findOneAndUpdate(
@@ -18,12 +15,6 @@ async function saveToken(data) {
     },
     { upsert: true, new: true }
   );
-}
-
-  await MelhorEnvioToken.create({
-    accessToken: data.access_token,
-    expiresAt,
-  });
 }
 
 // 🔹 Gera novo token
@@ -63,7 +54,7 @@ async function getValidToken() {
   }
 
   const now = new Date();
-  const bufferTime = 5 * 60 * 1000; // 5 minutos antes de expirar
+  const bufferTime = 5 * 60 * 1000;
 
   if (tokenDoc.expiresAt.getTime() - now.getTime() < bufferTime) {
     return await generateToken();
@@ -72,6 +63,23 @@ async function getValidToken() {
   return tokenDoc.accessToken;
 }
 
+// 🔹 Função genérica para chamadas autenticadas
+async function melhorEnvioRequest(method, endpoint, data = null) {
+  const token = await getValidToken();
+
+  return axios({
+    method,
+    url: `${BASE_URL}${endpoint}`,
+    data,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+  });
+}
+
 module.exports = {
   getValidToken,
+  melhorEnvioRequest,
 };
