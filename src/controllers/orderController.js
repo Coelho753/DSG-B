@@ -83,10 +83,6 @@ const createOrder = async (req, res, next) => {
 
     subtotal = Number(subtotal.toFixed(2));
 
-    // =============================
-    // 🔥 CÁLCULO REAL DO FRETE
-    // =============================
-
     const shippingOptions = await calcularFrete({
       from: {
         postal_code: process.env.STORE_POSTAL_CODE,
@@ -110,18 +106,12 @@ const createOrder = async (req, res, next) => {
       return fail(res, 'Nenhuma opção de frete encontrada', 400);
     }
 
-    // Seleciona o mais barato
     const selectedShipping = shippingOptions.sort(
       (a, b) => Number(a.price) - Number(b.price)
     )[0];
 
     const shipping = Number(selectedShipping.price);
-
     const total = Number((subtotal + shipping).toFixed(2));
-
-    // =============================
-    // 🧾 CRIA PEDIDO
-    // =============================
 
     const order = await Order.create([{
       user: req.user._id,
@@ -133,7 +123,7 @@ const createOrder = async (req, res, next) => {
       shippingCompany: selectedShipping.company?.name,
       shippingEstimatedDays: selectedShipping.delivery_time,
       shippingAddress,
-      status: 'pending', // 🔥 agora começa como pending
+      status: 'pending',
     }], { session });
 
     await session.commitTransaction();
