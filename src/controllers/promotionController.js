@@ -3,7 +3,6 @@ const Promotion = require("../models/Promotion");
 /*
 =================================================
 CRIAR PROMOÇÃO
-Aceita campos PT/EN e gera title automático
 =================================================
 */
 exports.createPromotion = async (req, res) => {
@@ -21,9 +20,21 @@ exports.createPromotion = async (req, res) => {
       endTime,
     } = req.body;
 
+    /*
+    ==========================
+    VALIDAÇÕES
+    ==========================
+    */
+
     if (!title || !type || !value || !startDate || !endDate) {
       return res.status(400).json({
         message: "Campos obrigatórios não preenchidos",
+      });
+    }
+
+    if (!product && !category) {
+      return res.status(400).json({
+        message: "Informe produto ou categoria",
       });
     }
 
@@ -43,14 +54,12 @@ exports.createPromotion = async (req, res) => {
     let end = new Date(endDate);
 
     if (hasTime && startTime && endTime) {
-      // aplica horário específico
       const [startHour, startMinute] = startTime.split(":");
       const [endHour, endMinute] = endTime.split(":");
 
       start.setHours(startHour, startMinute, 0, 0);
       end.setHours(endHour, endMinute, 59, 999);
     } else {
-      // promoção por dia inteiro
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
     }
@@ -61,10 +70,16 @@ exports.createPromotion = async (req, res) => {
       });
     }
 
+    /*
+    ==========================
+    CRIAÇÃO
+    ==========================
+    */
+
     const promotion = await Promotion.create({
       title,
       type,
-      value,
+      value: Number(value),
       product: product || null,
       category: category || null,
       startDate: start,
@@ -75,59 +90,11 @@ exports.createPromotion = async (req, res) => {
       active: true,
     });
 
-    res.status(201).json(promotion);
+    return res.status(201).json(promotion);
 
   } catch (error) {
     console.error("Erro ao criar promoção:", error);
-    res.status(500).json({ message: "Erro ao criar promoção" });
-  }
-};
-    /*
-    ==========================
-    VALIDAÇÕES
-    ==========================
-    */
-
-    if (!type || !value) {
-      return res.status(400).json({
-        message: "Tipo e valor são obrigatórios",
-      });
-    }
-
-    if (!startDate || !endDate) {
-      return res.status(400).json({
-        message: "Datas são obrigatórias",
-      });
-    }
-
-    if (!product && !category) {
-      return res.status(400).json({
-        message: "Informe produto ou categoria",
-      });
-    }
-
-    if (new Date(endDate) < new Date(startDate)) {
-      return res.status(400).json({
-        message: "Data final não pode ser menor que a inicial",
-      });
-    }
-
-    const promotion = await Promotion.create({
-      title,
-      type,
-      value: Number(value),
-      product,
-      category,
-      startDate,
-      endDate,
-      active,
-    });
-
-    res.status(201).json(promotion);
-
-  } catch (error) {
-    console.error("ERRO AO CRIAR PROMOÇÃO:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Erro ao criar promoção",
       error: error.message,
     });
@@ -142,10 +109,11 @@ LISTAR TODAS AS PROMOÇÕES
 exports.getAllPromotions = async (req, res) => {
   try {
     const promotions = await Promotion.find().sort({ createdAt: -1 });
-    res.json(promotions);
+    return res.json(promotions);
+
   } catch (error) {
     console.error("Erro ao buscar promoções:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Erro ao buscar promoções",
     });
   }
@@ -153,7 +121,7 @@ exports.getAllPromotions = async (req, res) => {
 
 /*
 =================================================
-LISTAR PROMOÇÕES ATIVAS (POR DATA)
+LISTAR PROMOÇÕES ATIVAS
 =================================================
 */
 exports.getActivePromotions = async (req, res) => {
@@ -166,11 +134,11 @@ exports.getActivePromotions = async (req, res) => {
       endDate: { $gte: now },
     });
 
-    res.json(promotions);
+    return res.json(promotions);
 
   } catch (error) {
     console.error("Erro ao buscar promoções ativas:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Erro ao buscar promoções",
     });
   }
@@ -191,11 +159,11 @@ exports.getPromotionById = async (req, res) => {
       });
     }
 
-    res.json(promotion);
+    return res.json(promotion);
 
   } catch (error) {
     console.error("Erro ao buscar promoção:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Erro ao buscar promoção",
     });
   }
@@ -220,11 +188,11 @@ exports.updatePromotion = async (req, res) => {
       });
     }
 
-    res.json(updated);
+    return res.json(updated);
 
   } catch (error) {
     console.error("Erro ao atualizar promoção:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Erro ao atualizar promoção",
       error: error.message,
     });
@@ -246,13 +214,13 @@ exports.deletePromotion = async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       message: "Promoção removida com sucesso",
     });
 
   } catch (error) {
     console.error("Erro ao deletar promoção:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Erro ao deletar promoção",
     });
   }
