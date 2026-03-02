@@ -1,19 +1,8 @@
-/**
- * Routes: mapeia endpoints HTTP para seus respectivos controllers e middlewares.
- * Arquivo: src/routes/orderRoutes.js
- */
-const express = require('express');
-const orderController = require('../controllers/orderController');
-const authMiddleware = require('../middlewares/authMiddleware');
-const validateRequest = require('../middlewares/validateRequest');
-const { createOrderValidator } = require('../validators/orderValidator');
-
+const express = require("express");
 const router = express.Router();
 
-router.use(authMiddleware);
-router.post('/', createOrderValidator, validateRequest, orderController.createOrder);
-router.post('/checkout', orderController.checkoutCart);
-router.get('/my-orders', orderController.getMyOrders);
-router.post("/confirmar", orderController.confirmarPedido);
+const orderController = require("../controllers/orderController");
+
+router.post("/", orderController.createOrder);
 
 module.exports = router;
