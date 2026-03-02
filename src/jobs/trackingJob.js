@@ -1,42 +1,35 @@
 const cron = require("node-cron");
-const Order = require("../models/Order");
-const trackingService = require("../services/trackingService");
+const Shipment = require("../models/Shipment");
+const { melhorEnvioRequest } = require("../services/melhorEnvioService");
 
-const startTrackingJob = () => {
+function startTrackingJob() {
   cron.schedule("*/30 * * * *", async () => {
-    console.log("🔄 Verificando atualizações de rastreio...");
+    console.log("🔄 Verificando rastreios...");
 
-    const orders = await Order.find({
-      trackingCode: { $exists: true },
-      status: { $in: ["shipped", "out_for_delivery"] },
+    const shipments = await Shipment.find({
+      etiquetaGerada: true,
+      status: { $ne: "ENTREGUE" }
     });
 
-    for (const order of orders) {
+    for (let shipment of shipments) {
       try {
-        const tracking = await trackingService.trackPackage(order.trackingCode);
+        const response = await melhorEnvioRequest(
+          "GET",
+          `/api/v2/me/shipment/tracking/${shipment.melhorEnvioId}`
+        );
 
-        const latestStatus = tracking.status;
+        const statusAtual = response.data.status;
 
-        if (latestStatus && latestStatus !== order.status) {
-          order.status = latestStatus;
-
-          order.statusHistory.push({
-            status: latestStatus,
-            description: "Atualização automática de rastreio",
-            date: new Date(),
-          });
-
-          await order.save();
-
-          console.log(`Pedido ${order._id} atualizado para ${latestStatus}`);
-        }
+        shipment.status = statusAtual;
+        shipment.trackingCode = response.data.tracking;
+        await shipment.save();
 
       } catch (error) {
-        console.error("Erro ao atualizar rastreio:", error.message);
+        console.error("Erro rastreando:", error.message);
       }
     }
 
   });
-};
+}
 
 module.exports = startTrackingJob;
