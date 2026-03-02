@@ -1,7 +1,7 @@
 const axios = require("axios");
 const MelhorEnvioToken = require("../models/MelhorEnvioToken");
 
-const BASE_URL = "https://api.melhorenvio.com.br";
+const BASE_URL = process.env.MELHOR_ENVIO_BASE_URL;
 
 // 🔹 Salva token no banco
 async function saveToken(data) {
