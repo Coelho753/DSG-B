@@ -9,16 +9,22 @@ exports.createPayment = async (req, res) => {
       issuer_id,
       installments,
       email,
+      cpf,
     } = req.body;
 
     let payload = {
       transaction_amount: Number(amount),
       description: "Compra DSG",
       payment_method_id,
-      payer: { email },
+      payer: {
+        email,
+        identification: {
+          type: "CPF",
+          number: cpf,
+        },
+      },
     };
 
-    // 🔹 CARTÃO
     if (payment_method_id !== "pix") {
       payload = {
         ...payload,
@@ -33,7 +39,7 @@ exports.createPayment = async (req, res) => {
       payload,
       {
         headers: {
-          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+          Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
           "Content-Type": "application/json",
         },
       }
@@ -41,7 +47,6 @@ exports.createPayment = async (req, res) => {
 
     const data = response.data;
 
-    // 🔹 PIX RETORNA QR CODE
     if (payment_method_id === "pix") {
       return res.json({
         id: data.id,
@@ -52,7 +57,6 @@ exports.createPayment = async (req, res) => {
       });
     }
 
-    // 🔹 CARTÃO
     return res.json({
       id: data.id,
       status: data.status,
@@ -60,7 +64,7 @@ exports.createPayment = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error.response?.data || error.message);
+    console.error("ERRO MERCADO PAGO:", error.response?.data || error.message);
     res.status(500).json({ message: "Erro ao processar pagamento" });
   }
 };
