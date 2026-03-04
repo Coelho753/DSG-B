@@ -1,17 +1,19 @@
-const { MercadoPagoConfig, Preference } = require("mercadopago");
+const { MercadoPagoConfig, Payment } = require("mercadopago");
+const { v4: uuidv4 } = require("uuid");
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
 });
 
-exports.createPreference = async (items) => {
-  const preference = new Preference(client);
+const payment = new Payment(client);
 
-  const response = await preference.create({
-    body: {
-      items,
+async function createPayment(data) {
+  return await payment.create({
+    body: data,
+    requestOptions: {
+      idempotencyKey: uuidv4(), // 🔥 OBRIGATÓRIO
     },
   });
+}
 
-  return response;
-};
+module.exports = { createPayment };
