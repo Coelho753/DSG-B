@@ -8,12 +8,26 @@ const client = new MercadoPagoConfig({
 const payment = new Payment(client);
 
 async function createPayment(data) {
-  return await payment.create({
-    body: data,
-    requestOptions: {
-      idempotencyKey: uuidv4(), // 🔥 OBRIGATÓRIO
-    },
-  });
+  try {
+    const response = await payment.create({
+      body: {
+        transaction_amount: Number(data.amount),
+        description: data.items?.[0]?.title || "Compra",
+        payment_method_id: data.payment_method_id,
+        payer: {
+          email: data.email,
+        },
+      },
+      requestOptions: {
+        idempotencyKey: uuidv4(), // 🔥 OBRIGATÓRIO
+      },
+    });
+
+    return response;
+  } catch (error) {
+    console.error("ERRO MERCADO PAGO:", error);
+    throw error;
+  }
 }
 
 module.exports = { createPayment };
