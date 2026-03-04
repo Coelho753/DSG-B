@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { v4: uuidv4 } = require("uuid");
 
 exports.createPayment = async (req, res) => {
   try {
@@ -41,6 +42,7 @@ exports.createPayment = async (req, res) => {
         headers: {
           Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
           "Content-Type": "application/json",
+          "X-Idempotency-Key": uuidv4(), // 🔥 CORREÇÃO
         },
       }
     );
@@ -65,6 +67,10 @@ exports.createPayment = async (req, res) => {
 
   } catch (error) {
     console.error("ERRO MERCADO PAGO:", error.response?.data || error.message);
-    res.status(500).json({ message: "Erro ao processar pagamento" });
+
+    res.status(500).json({
+      message: "Erro ao processar pagamento",
+      details: error.response?.data || error.message,
+    });
   }
 };
