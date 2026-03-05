@@ -12,9 +12,23 @@ const addressSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema(
   {
-    name: String,
-    email: { type: String, unique: true },
-    password: String,
+    name: {
+      type: String,
+      required: true,
+    },
+
+    email: {
+      type: String,
+      unique: true,
+      required: true,
+      lowercase: true,
+    },
+
+    password: {
+      type: String,
+      required: true,
+      minlength: 8,
+    },
 
     role: {
       type: String,
@@ -29,7 +43,7 @@ const userSchema = new mongoose.Schema(
 
     address: {
       type: addressSchema,
-      required: true, // 🔥 obrigatório
+      required: true,
     },
   },
   { timestamps: true }
