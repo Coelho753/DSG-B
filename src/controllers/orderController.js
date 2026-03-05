@@ -1,29 +1,43 @@
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const User = require('../models/User');
+
 const { calcularFrete } = require('../services/freteService');
 const { getActivePromotionsMap, toProductResponse } = require('../services/pricingService');
 const { ok, fail } = require('../utils/apiResponse');
 
+
+/**
+ * Criar pedido
+ */
 const createOrder = async (req, res, next) => {
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const items = req.body.items || req.body.produtos || [];
-    const User = require("../models/User");
 
-    const user = await User.findById(req.user._id);
-    const shippingAddress = user.address;
+    const items = req.body.items || req.body.produtos || [];
 
     if (!Array.isArray(items) || !items.length) {
       await session.abortTransaction();
       return fail(res, 'Itens obrigatórios', 400);
     }
 
-    if (!shippingAddress?.postalCode) {
+    // Buscar usuário
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
       await session.abortTransaction();
-      return fail(res, 'CEP obrigatório', 400);
+      return fail(res, 'Usuário não encontrado', 404);
+    }
+
+    const shippingAddress = user.address;
+
+    if (!shippingAddress?.zipCode) {
+      await session.abortTransaction();
+      return fail(res, 'CEP obrigatório no perfil do usuário', 400);
     }
 
     const productIds = items.map(item => item.productId || item.product);
@@ -42,8 +56,10 @@ const createOrder = async (req, res, next) => {
     const orderItems = [];
 
     for (const item of items) {
+
       const productId = String(item.productId || item.product);
       const quantity = Number(item.quantity || item.quantidade || 0);
+
       const product = productMap.get(productId);
 
       if (!product || quantity <= 0) {
@@ -86,12 +102,16 @@ const createOrder = async (req, res, next) => {
 
     subtotal = Number(subtotal.toFixed(2));
 
+    /**
+     * Calcular frete automático
+     */
+
     const shippingOptions = await calcularFrete({
       from: {
         postal_code: process.env.STORE_POSTAL_CODE,
       },
       to: {
-        postal_code: shippingAddress.postalCode,
+        postal_code: shippingAddress.zipCode,
       },
       products: orderItems.map(item => ({
         name: item.name,
@@ -109,27 +129,16 @@ const createOrder = async (req, res, next) => {
       return fail(res, 'Nenhuma opção de frete encontrada', 400);
     }
 
-    const getMyOrders = async (req, res) => {
-  try {
-
-    const orders = await Order.find({
-      user: req.user._id,
-    }).sort({ createdAt: -1 });
-
-    res.json(orders);
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erro ao buscar pedidos" });
-  }
- };
-
     const selectedShipping = shippingOptions.sort(
       (a, b) => Number(a.price) - Number(b.price)
     )[0];
 
     const shipping = Number(selectedShipping.price);
     const total = Number((subtotal + shipping).toFixed(2));
+
+    /**
+     * Criar pedido
+     */
 
     const order = await Order.create([{
       user: req.user._id,
@@ -150,11 +159,40 @@ const createOrder = async (req, res, next) => {
     return ok(res, order[0], 201);
 
   } catch (error) {
+
     await session.abortTransaction();
     session.endSession();
+
     return next(error);
   }
 };
+
+
+
+/**
+ * Buscar pedidos do usuário (Minha Conta → Minhas Compras)
+ */
+
+const getMyOrders = async (req, res) => {
+
+  try {
+
+    const orders = await Order.find({
+      user: req.user._id,
+    })
+      .populate('items.product', 'name image price')
+      .sort({ createdAt: -1 });
+
+    return ok(res, orders);
+
+  } catch (error) {
+
+    console.error(error);
+
+    return fail(res, 'Erro ao buscar pedidos', 500);
+  }
+};
+
 
 module.exports = {
   createOrder,
