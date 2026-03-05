@@ -11,7 +11,11 @@ const createOrder = async (req, res, next) => {
 
   try {
     const items = req.body.items || req.body.produtos || [];
-    const shippingAddress = req.body.shippingAddress;
+    const User = require("../models/User");
+
+    const user = await User.findById(req.user._id);
+
+    const shippingAddress = user.address;
 
     if (!Array.isArray(items) || !items.length) {
       await session.abortTransaction();
