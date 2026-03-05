@@ -14,7 +14,6 @@ const createOrder = async (req, res, next) => {
     const User = require("../models/User");
 
     const user = await User.findById(req.user._id);
-
     const shippingAddress = user.address;
 
     if (!Array.isArray(items) || !items.length) {
@@ -109,6 +108,21 @@ const createOrder = async (req, res, next) => {
       await session.abortTransaction();
       return fail(res, 'Nenhuma opção de frete encontrada', 400);
     }
+
+    const getMyOrders = async (req, res) => {
+  try {
+
+    const orders = await Order.find({
+      user: req.user._id,
+    }).sort({ createdAt: -1 });
+
+    res.json(orders);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao buscar pedidos" });
+  }
+ };
 
     const selectedShipping = shippingOptions.sort(
       (a, b) => Number(a.price) - Number(b.price)
