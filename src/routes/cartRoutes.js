@@ -48,7 +48,8 @@ router.get("/", auth, async (req, res) => {
 ADICIONAR PRODUTO AO CARRINHO
 ==============================
 */
-router.post("/", auth, async (req, res) => {
+
+    router.post("/", auth, async (req, res) => {
   try {
 
     const { productId, quantity = 1 } = req.body;
@@ -61,6 +62,16 @@ router.post("/", auth, async (req, res) => {
 
     if (!product) {
       return res.status(404).json({ message: "Produto não encontrado" });
+    }
+
+    /* GARANTE QUE O PRODUTO TEM PREÇO */
+
+    const price = Number(product.price || product.finalPrice || 0);
+
+    if (!price) {
+      return res.status(400).json({
+        message: "Produto sem preço definido"
+      });
     }
 
     let cart = await Cart.findOne({ user: req.user.id });
@@ -79,25 +90,29 @@ router.post("/", auth, async (req, res) => {
 
     if (itemIndex > -1) {
 
-      cart.items[itemIndex].quantity += quantity;
+      cart.items[itemIndex].quantity += Number(quantity);
 
     } else {
 
       cart.items.push({
         product: productId,
         name: product.name,
-        price: product.price,
-        quantity
+        price: price,
+        quantity: Number(quantity)
       });
 
     }
 
-    /* recalcular total */
+    /* recalcular total com segurança */
 
-    cart.total = cart.items.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0
-    );
+    cart.total = cart.items.reduce((acc, item) => {
+
+      const itemPrice = Number(item.price) || 0;
+      const itemQty = Number(item.quantity) || 0;
+
+      return acc + (itemPrice * itemQty);
+
+    }, 0);
 
     await cart.save();
 
@@ -114,7 +129,8 @@ router.post("/", auth, async (req, res) => {
 
   }
 });
-
+        
+    
 
 /*
 ==============================
