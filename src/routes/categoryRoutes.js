@@ -38,4 +38,32 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 
 });
+
+router.delete("/:id", authMiddleware, async (req, res) => {
+
+  try {
+
+    const category = await Category.findByIdAndDelete(
+      req.params.id
+    );
+
+    if (!category) {
+      return res.status(404).json({
+        message: "Categoria não encontrada"
+      });
+    }
+
+    res.json({
+      message: "Categoria deletada"
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: "Erro ao deletar categoria"
+    });
+
+  }
+
+});
 module.exports = router;
