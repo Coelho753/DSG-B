@@ -1,11 +1,6 @@
-const axios = require("axios");
-const { v4: uuidv4 } = require("uuid");
-const User = require("../models/User");
-const Order = require("../models/Order");
-const { calcularFrete } = require("../services/freteService");
-
 exports.createPayment = async (req, res) => {
   try {
+
     const {
       amount,
       token,
@@ -23,7 +18,6 @@ exports.createPayment = async (req, res) => {
       });
     }
 
-    // 🔹 CALCULAR FRETE AUTOMÁTICO
     const shippingOptions = await calcularFrete({
       from: { postal_code: process.env.STORE_POSTAL_CODE },
       to: { postal_code: user.address.zipCode },
@@ -32,10 +26,44 @@ exports.createPayment = async (req, res) => {
 
     const selectedShipping = shippingOptions[0];
 
+    const estimatedDate = new Date();
+    estimatedDate.setDate(
+      estimatedDate.getDate() + selectedShipping.delivery_time
+    );
+
+    /* CRIAR PEDIDO */
+
+    const order = await Order.create({
+      user: user._id,
+      items,
+      totalAmount: amount,
+
+      shipping: {
+        price: selectedShipping.price,
+        delivery_time: selectedShipping.delivery_time,
+        company: selectedShipping.company.name,
+      },
+
+      payment: {
+        method: payment_method_id,
+        status: "pending",
+      },
+
+      address: user.address,
+      estimatedDeliveryDate: estimatedDate,
+    });
+
+    /* PAGAMENTO */
+
     const payload = {
       transaction_amount: Number(amount),
       description: "Compra DSG",
       payment_method_id,
+
+      metadata: {
+        order_id: order._id.toString(),
+      },
+
       payer: {
         email: user.email,
         identification: {
@@ -65,45 +93,27 @@ exports.createPayment = async (req, res) => {
 
     const data = response.data;
 
-    // 🔹 DATA ESTIMADA
-    const estimatedDate = new Date();
-    estimatedDate.setDate(
-      estimatedDate.getDate() + selectedShipping.delivery_time
-    );
+    /* SALVAR PAYMENT ID */
 
-    // 🔹 CRIAR PEDIDO
-    await Order.create({
-      user: user._id,
-      items,
-      totalAmount: amount,
+    order.payment.paymentId = data.id;
+    order.payment.status = data.status;
+    order.payment.status_detail = data.status_detail;
 
-      shipping: {
-        price: selectedShipping.price,
-        delivery_time: selectedShipping.delivery_time,
-        company: selectedShipping.company.name,
-      },
+    await order.save();
 
-      payment: {
-        paymentId: data.id,
-        method: payment_method_id,
-        status: data.status,
-        status_detail: data.status_detail,
-      },
-
-      address: user.address,
-      estimatedDeliveryDate: estimatedDate,
-    });
-
-    return res.json({
+    res.json({
       id: data.id,
       status: data.status,
     });
 
   } catch (error) {
+
     console.error("ERRO:", error.response?.data || error.message);
+
     res.status(500).json({
       message: "Erro ao processar pagamento",
       details: error.response?.data || error.message,
     });
+
   }
 };
