@@ -1,10 +1,19 @@
-const mercadopago = require("mercadopago");
+const { MercadoPagoConfig, Payment } = require("mercadopago");
+
 const Order = require("../models/Order");
 
-mercadopago.configure({
-  access_token: process.env.MERCADO_PAGO_ACCESS_TOKEN
+const client = new MercadoPagoConfig({
+  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN
 });
 
+const payment = new Payment(client);
+
+
+/*
+==============================
+CRIAR PAGAMENTO PIX
+==============================
+*/
 exports.createPixPayment = async (req, res) => {
 
   try {
@@ -19,25 +28,24 @@ exports.createPixPayment = async (req, res) => {
       });
     }
 
-    const payment = await mercadopago.payment.create({
-
+    const paymentData = {
       transaction_amount: Number(order.total),
-
       description: `Pedido ${order._id}`,
-
       payment_method_id: "pix",
-
       payer: {
         email: "cliente@email.com"
       }
+    };
 
+    const result = await payment.create({
+      body: paymentData
     });
 
-    order.paymentId = payment.body.id;
+    order.paymentId = result.id;
 
     await order.save();
 
-    const qr = payment.body.point_of_interaction.transaction_data;
+    const qr = result.point_of_interaction.transaction_data;
 
     res.json({
       qr_code: qr.qr_code,
@@ -46,10 +54,10 @@ exports.createPixPayment = async (req, res) => {
 
   } catch (error) {
 
-    console.error("Erro pagamento PIX:", error);
+    console.error("Erro ao criar PIX:", error);
 
     res.status(500).json({
-      message: "Erro ao criar pagamento"
+      message: "Erro ao gerar PIX"
     });
 
   }
