@@ -1,43 +1,65 @@
 const Cart = require("../models/Cart");
+const Order = require("../models/Order");
 const User = require("../models/User");
 
-exports.getCheckout = async (req, res) => {
+const { calculateFreight } = require("../services/freightService");
+const { applyCoupon } = require("../services/couponService");
 
-  const cart = await Cart.findOne({ user: req.user.id }).populate("items.product");
+exports.checkout = async (req,res)=>{
 
-  const selectedItems = cart.items.filter(i => i.selected);
+try{
 
-  if (!selectedItems.length) {
-    return res.status(400).json({
-      message: "Nenhum produto selecionado"
-    });
-  }
+  const { coupon } = req.body;
 
   const user = await User.findById(req.user.id);
 
-  /* CALCULAR FRETE */
+  const cart = await Cart.findOne({ user: req.user.id });
 
-  const shipping = await calcularFrete({
-    postal_code: user.address.zipCode,
-    products: selectedItems
-  });
+  if(!cart || cart.items.length === 0){
+    return res.status(400).json({message:"Carrinho vazio"});
+  }
 
-  const subtotal = selectedItems.reduce((acc, item) => {
-    return acc + item.product.price * item.quantity;
-  }, 0);
+  const selectedItems = cart.items.filter(i=>i.selected);
 
-  const total = subtotal + shipping.price;
+  if(selectedItems.length === 0){
+    return res.status(400).json({message:"Nenhum item selecionado"});
+  }
 
-  res.json({
+  const subtotal = selectedItems.reduce((acc,item)=>{
+
+    return acc + (item.price * item.quantity);
+
+  },0);
+
+  const freight = await calculateFreight(user.address.cep);
+
+  const discount = await applyCoupon(coupon, subtotal);
+
+  const total = subtotal + freight - discount;
+
+  const order = await Order.create({
+
+    user: req.user.id,
 
     items: selectedItems,
 
     subtotal,
+    freight,
+    discount,
+    total,
 
-    shipping,
-
-    total
+    coupon
 
   });
+
+  res.json(order);
+
+}catch(error){
+
+  console.error(error);
+
+  res.status(500).json({message:"Erro no checkout"});
+
+}
 
 };
