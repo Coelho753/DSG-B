@@ -1,13 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const mercadopago = require("mercadopago");
+const axios = require("axios");
 
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
-
-mercadopago.configure({
-  access_token: process.env.MERCADO_PAGO_ACCESS_TOKEN
-});
 
 router.post("/mercadopago", async (req, res) => {
 
@@ -17,54 +13,64 @@ router.post("/mercadopago", async (req, res) => {
 
     const { type, data } = req.body;
 
-    if (type === "payment") {
+    if (type !== "payment") {
+      return res.sendStatus(200);
+    }
 
-      const paymentId = data.id;
+    const paymentId = data.id;
 
-      const payment = await mercadopago.payment.findById(paymentId);
-
-      const paymentData = payment.body;
-
-      console.log("💰 Status pagamento:", paymentData.status);
-
-      if (paymentData.status === "approved") {
-
-        const orderId = paymentData.metadata.order_id;
-
-        const order = await Order.findById(orderId);
-
-        if (!order) {
-          console.log("❌ Pedido não encontrado");
-          return res.sendStatus(200);
-        }
-
-        if (order.status !== "paid") {
-
-          order.status = "paid";
-          order.paymentId = paymentId;
-
-          await order.save();
-
-          console.log("✅ Pedido pago:", orderId);
-
-          /* limpar carrinho */
-
-          await Cart.findOneAndUpdate(
-            { user: order.user },
-            { items: [], total: 0 }
-          );
-
-        }
-
+    const response = await axios.get(
+      `https://api.mercadopago.com/v1/payments/${paymentId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+        },
       }
+    );
 
+    const payment = response.data;
+
+    const orderId = payment.metadata?.order_id;
+
+    if (!orderId) {
+      console.log("⚠️ Pagamento sem order_id");
+      return res.sendStatus(200);
+    }
+
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      console.log("❌ Pedido não encontrado");
+      return res.sendStatus(200);
+    }
+
+    if (order.status === "paid") {
+      return res.sendStatus(200);
+    }
+
+    if (payment.status === "approved") {
+
+      order.status = "paid";
+
+      order.payment.status = payment.status;
+      order.payment.status_detail = payment.status_detail;
+      order.payment.paymentId = payment.id;
+
+      await order.save();
+
+      console.log("✅ Pedido pago:", orderId);
+
+      await Cart.findOneAndUpdate(
+        { user: order.user },
+        { items: [], total: 0 }
+      );
     }
 
     res.sendStatus(200);
 
   } catch (error) {
 
-    console.error("Erro webhook:", error);
+    console.error("🚨 ERRO WEBHOOK:", error.response?.data || error.message);
 
     res.sendStatus(500);
 
