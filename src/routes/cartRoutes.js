@@ -8,6 +8,19 @@ const auth = require("../middlewares/authMiddleware");
 
 /*
 ==============================
+FUNÇÃO PARA RECALCULAR TOTAL
+==============================
+*/
+function calculateCartTotal(cart) {
+  return cart.items.reduce((acc, item) => {
+    const price = Number(item.price) || 0;
+    const qty = Number(item.quantity) || 0;
+    return acc + price * qty;
+  }, 0);
+}
+
+/*
+==============================
 BUSCAR CARRINHO DO USUÁRIO
 ==============================
 */
@@ -33,7 +46,7 @@ router.get("/", auth, async (req, res) => {
 
   } catch (error) {
 
-    console.error("Erro detalhado ao buscar carrinho:", error);
+    console.error("Erro ao buscar carrinho:", error);
 
     res.status(500).json({
       message: "Erro ao buscar carrinho",
@@ -48,8 +61,8 @@ router.get("/", auth, async (req, res) => {
 ADICIONAR PRODUTO AO CARRINHO
 ==============================
 */
+router.post("/", auth, async (req, res) => {
 
-    router.post("/", auth, async (req, res) => {
   try {
 
     const { productId, quantity = 1 } = req.body;
@@ -63,8 +76,6 @@ ADICIONAR PRODUTO AO CARRINHO
     if (!product) {
       return res.status(404).json({ message: "Produto não encontrado" });
     }
-
-    /* GARANTE QUE O PRODUTO TEM PREÇO */
 
     const price = Number(product.price || product.finalPrice || 0);
 
@@ -98,21 +109,13 @@ ADICIONAR PRODUTO AO CARRINHO
         product: productId,
         name: product.name,
         price: price,
-        quantity: Number(quantity)
+        quantity: Number(quantity),
+        selected: true
       });
 
     }
 
-    /* recalcular total com segurança */
-
-    cart.total = cart.items.reduce((acc, item) => {
-
-      const itemPrice = Number(item.price) || 0;
-      const itemQty = Number(item.quantity) || 0;
-
-      return acc + (itemPrice * itemQty);
-
-    }, 0);
+    cart.total = calculateCartTotal(cart);
 
     await cart.save();
 
@@ -128,9 +131,105 @@ ADICIONAR PRODUTO AO CARRINHO
     });
 
   }
+
 });
-        
-    
+
+
+/*
+==============================
+ATUALIZAR QUANTIDADE
+==============================
+*/
+router.put("/quantity", auth, async (req, res) => {
+
+  try {
+
+    const { productId, quantity } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ message: "Produto inválido" });
+    }
+
+    const cart = await Cart.findOne({ user: req.user.id });
+
+    if (!cart) {
+      return res.status(404).json({ message: "Carrinho não encontrado" });
+    }
+
+    const item = cart.items.find(
+      i => i.product.toString() === productId
+    );
+
+    if (!item) {
+      return res.status(404).json({ message: "Item não encontrado" });
+    }
+
+    item.quantity = Number(quantity);
+
+    cart.total = calculateCartTotal(cart);
+
+    await cart.save();
+
+    res.json(cart);
+
+  } catch (error) {
+
+    console.error("Erro ao atualizar quantidade:", error);
+
+    res.status(500).json({
+      message: "Erro ao atualizar quantidade",
+      error: error.message
+    });
+
+  }
+
+});
+
+
+/*
+==============================
+SELECIONAR ITEM PARA CHECKOUT
+==============================
+*/
+router.put("/select", auth, async (req, res) => {
+
+  try {
+
+    const { productId, selected } = req.body;
+
+    const cart = await Cart.findOne({ user: req.user.id });
+
+    if (!cart) {
+      return res.status(404).json({ message: "Carrinho não encontrado" });
+    }
+
+    const item = cart.items.find(
+      i => i.product.toString() === productId
+    );
+
+    if (!item) {
+      return res.status(404).json({ message: "Item não encontrado" });
+    }
+
+    item.selected = Boolean(selected);
+
+    await cart.save();
+
+    res.json(cart);
+
+  } catch (error) {
+
+    console.error("Erro ao selecionar item:", error);
+
+    res.status(500).json({
+      message: "Erro ao selecionar item",
+      error: error.message
+    });
+
+  }
+
+});
+
 
 /*
 ==============================
@@ -138,6 +237,7 @@ REMOVER ITEM DO CARRINHO
 ==============================
 */
 router.delete("/:productId", auth, async (req, res) => {
+
   try {
 
     const { productId } = req.params;
@@ -152,10 +252,7 @@ router.delete("/:productId", auth, async (req, res) => {
       item => item.product.toString() !== productId
     );
 
-    cart.total = cart.items.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0
-    );
+    cart.total = calculateCartTotal(cart);
 
     await cart.save();
 
@@ -163,14 +260,15 @@ router.delete("/:productId", auth, async (req, res) => {
 
   } catch (error) {
 
-    console.error("Erro ao remover do carrinho:", error);
+    console.error("Erro ao remover item:", error);
 
     res.status(500).json({
-      message: "Erro ao remover do carrinho",
+      message: "Erro ao remover item",
       error: error.message
     });
 
   }
+
 });
 
 
@@ -180,6 +278,7 @@ LIMPAR CARRINHO
 ==============================
 */
 router.delete("/clear/all", auth, async (req, res) => {
+
   try {
 
     const cart = await Cart.findOne({ user: req.user.id });
@@ -193,7 +292,9 @@ router.delete("/clear/all", auth, async (req, res) => {
 
     await cart.save();
 
-    res.json({ message: "Carrinho limpo" });
+    res.json({
+      message: "Carrinho limpo"
+    });
 
   } catch (error) {
 
@@ -205,7 +306,7 @@ router.delete("/clear/all", auth, async (req, res) => {
     });
 
   }
-});
 
+});
 
 module.exports = router;
