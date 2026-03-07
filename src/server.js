@@ -12,6 +12,9 @@ const cartRoutes = require("./routes/cartRoutes");
 const freteRoutes = require("./routes/freteRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const webhookRoutes = require("./src/routes/webhookRoutes");
+
+
 
 
 
@@ -37,6 +40,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/frete", freteRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/webhooks", webhookRoutes);
 
 app.get("/", (req, res) => {
   res.send("API funcionando");
