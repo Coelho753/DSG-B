@@ -1,88 +1,52 @@
-const Cart = require("../models/Cart");
 const Order = require("../models/Order");
-const Coupon = require("../models/Coupon");
-
-/*
-========================
-CRIAR PEDIDO
-========================
-*/
+const Product = require("../models/Product");
 
 exports.createOrder = async (req, res) => {
-
   try {
 
-    const userId = req.user?.id;
+    const { items, shippingAddress } = req.body;
 
-    const { couponCode } = req.body;
-
-    const cart = await Cart.findOne({ user: userId }).populate("items.product");
-
-    if (!cart || cart.items.length === 0) {
-      return res.status(400).json({
-        message: "Carrinho vazio"
-      });
-    }
-
-    const selectedItems = cart.items.filter(i => i.selected);
-
-    if (selectedItems.length === 0) {
-      return res.status(400).json({
-        message: "Nenhum item selecionado"
-      });
+    if (!items || items.length === 0) {
+      return res.status(400).json({ message: "Itens obrigatórios" });
     }
 
     let subtotal = 0;
 
-    const items = selectedItems.map(item => {
+    const orderItems = [];
 
-      const total = item.price * item.quantity;
+    for (const item of items) {
+
+      const product = await Product.findById(item.productId);
+
+      if (!product) {
+        return res.status(404).json({ message: "Produto não encontrado" });
+      }
+
+      const price = product.price;
+      const total = price * item.quantity;
+
       subtotal += total;
 
-      return {
-        product: item.product._id,
-        name: item.name,
-        price: item.price,
+      orderItems.push({
+        product: product._id,
+        name: product.name,
+        price,
         quantity: item.quantity
-      };
-
-    });
-
-    let discount = 0;
-
-    if (couponCode) {
-
-      const coupon = await Coupon.findOne({
-        code: couponCode.toUpperCase(),
-        active: true
       });
-
-      if (coupon) {
-
-        if (coupon.type === "percentage") {
-          discount = subtotal * (coupon.value / 100);
-        } else {
-          discount = coupon.value;
-        }
-
-      }
 
     }
 
-    const freight = 20; // pode integrar com correios depois
+    const freight = 20;
 
-    const total = subtotal - discount + freight;
+    const total = subtotal + freight;
 
     const order = await Order.create({
-
-      user: userId,
-      items,
+      items: orderItems,
+      shippingAddress,
       subtotal,
-      discount,
       freight,
       total,
-      coupon: couponCode || null
-
+      status: "pending"
     });
 
     res.json({
@@ -99,5 +63,4 @@ exports.createOrder = async (req, res) => {
     });
 
   }
-
 };
