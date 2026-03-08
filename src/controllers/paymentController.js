@@ -1,5 +1,4 @@
 const { MercadoPagoConfig, Payment } = require("mercadopago");
-
 const Order = require("../models/Order");
 
 const client = new MercadoPagoConfig({
@@ -10,15 +9,22 @@ const payment = new Payment(client);
 
 
 /*
-==============================
+========================
 CRIAR PAGAMENTO PIX
-==============================
+========================
 */
-exports.createPixPayment = async (req, res) => {
+
+exports.createPayment = async (req, res) => {
 
   try {
 
     const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({
+        message: "orderId é obrigatório"
+      });
+    }
 
     const order = await Order.findById(orderId);
 
@@ -42,22 +48,22 @@ exports.createPixPayment = async (req, res) => {
     });
 
     order.paymentId = result.id;
-
     await order.save();
 
     const qr = result.point_of_interaction.transaction_data;
 
     res.json({
+      paymentId: result.id,
       qr_code: qr.qr_code,
       qr_code_base64: qr.qr_code_base64
     });
 
   } catch (error) {
 
-    console.error("Erro ao criar PIX:", error);
+    console.error("Erro ao criar pagamento:", error);
 
     res.status(500).json({
-      message: "Erro ao gerar PIX"
+      message: "Erro ao criar pagamento"
     });
 
   }
