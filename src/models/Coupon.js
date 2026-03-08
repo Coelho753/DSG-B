@@ -35,8 +35,7 @@ const CouponSchema = new mongoose.Schema({
   },
 
   usageLimit: {
-    type: Number,
-    default: null
+    type: Number
   },
 
   usedCount: {
@@ -49,8 +48,6 @@ const CouponSchema = new mongoose.Schema({
     default: true
   }
 
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model("Coupon", CouponSchema);
