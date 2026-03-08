@@ -1,19 +1,22 @@
 const Cart = require("../models/Cart");
 const Order = require("../models/Order");
-const User = require("../models/User");
+const Coupon = require("../models/Coupon");
 
-const { calculateFreight } = require("../services/freightService");
-const { applyCoupon } = require("../services/couponService");
+/*
+========================
+CRIAR PEDIDO
+========================
+*/
 
-exports.createCheckout = async (req, res) => {
+exports.createOrder = async (req, res) => {
 
   try {
 
-    const { coupon } = req.body;
+    const userId = req.user?.id;
 
-    const user = await User.findById(req.user.id);
+    const { couponCode } = req.body;
 
-    const cart = await Cart.findOne({ user: req.user.id });
+    const cart = await Cart.findOne({ user: userId }).populate("items.product");
 
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({
@@ -29,37 +32,70 @@ exports.createCheckout = async (req, res) => {
       });
     }
 
-    const subtotal = selectedItems.reduce((acc, item) => {
-      return acc + (item.price * item.quantity);
-    }, 0);
+    let subtotal = 0;
 
-    const freight = await calculateFreight(user);
+    const items = selectedItems.map(item => {
 
-    const discount = await applyCoupon(coupon, subtotal);
+      const total = item.price * item.quantity;
+      subtotal += total;
 
-    const total = subtotal + freight - discount;
+      return {
+        product: item.product._id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      };
+
+    });
+
+    let discount = 0;
+
+    if (couponCode) {
+
+      const coupon = await Coupon.findOne({
+        code: couponCode.toUpperCase(),
+        active: true
+      });
+
+      if (coupon) {
+
+        if (coupon.type === "percentage") {
+          discount = subtotal * (coupon.value / 100);
+        } else {
+          discount = coupon.value;
+        }
+
+      }
+
+    }
+
+    const freight = 20; // pode integrar com correios depois
+
+    const total = subtotal - discount + freight;
 
     const order = await Order.create({
-      user: req.user.id,
-      items: selectedItems,
+
+      user: userId,
+      items,
       subtotal,
-      freight,
       discount,
+      freight,
       total,
-      coupon
+      coupon: couponCode || null
+
     });
 
     res.json({
-      message: "Pedido criado",
-      order
+      orderId: order._id,
+      total
     });
 
   } catch (error) {
 
-    console.error("Erro no checkout:", error);
+    console.error(error);
 
     res.status(500).json({
-      message: "Erro no checkout"
+      message: "Erro ao criar pedido"
     });
 
   }
