@@ -43,7 +43,7 @@ app.use("/api/frete", freteRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/webhooks", webhookRoutes);
-app.use("/checkout", checkoutRoutes);
+app.use("/api/checkout", checkoutRoutes);
 app.use("/api/coupons", couponRoutes);
 
 app.get("/", (req, res) => {
