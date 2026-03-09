@@ -21,8 +21,6 @@ app.use("/api/categories", require("./routes/categoryRoutes"));
 
 app.use("/api/cart", require("./routes/cartRoutes"));
 
-app.use("/api/orders", require("./routes/orderRoutes"));       // ✅ adicionar
-
 app.use("/api/coupons", require("./routes/couponRoutes"));
 
 app.use("/api/orders", require("./routes/orderRoutes"));
