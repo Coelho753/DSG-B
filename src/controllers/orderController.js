@@ -1,15 +1,16 @@
-const mongoose = require('mongoose');
-const Order = require('../models/Order');
-const Product = require('../models/Product');
-const User = require('../models/User');
+const mongoose = require("mongoose");
+const Order = require("../models/Order");
+const Product = require("../models/Product");
+const User = require("../models/User");
 
-const { calcularFrete } = require('../services/freteService');
-const { getActivePromotionsMap, toProductResponse } = require('../services/pricingService');
-const { ok, fail } = require('../utils/apiResponse');
-
+const { calcularFrete } = require("../services/freteService");
+const { getActivePromotionsMap, toProductResponse } = require("../services/pricingService");
+const { ok, fail } = require("../utils/apiResponse");
 
 /**
- * Criar pedido
+ * ========================
+ * CRIAR PEDIDO
+ * ========================
  */
 const createOrder = async (req, res, next) => {
 
@@ -22,7 +23,12 @@ const createOrder = async (req, res, next) => {
 
     if (!Array.isArray(items) || !items.length) {
       await session.abortTransaction();
-      return fail(res, 'Itens obrigatórios', 400);
+      return fail(res, "Itens obrigatórios", 400);
+    }
+
+    if (!req.user) {
+      await session.abortTransaction();
+      return fail(res, "Usuário não autenticado", 401);
     }
 
     // Buscar usuário
@@ -30,14 +36,14 @@ const createOrder = async (req, res, next) => {
 
     if (!user) {
       await session.abortTransaction();
-      return fail(res, 'Usuário não encontrado', 404);
+      return fail(res, "Usuário não encontrado", 404);
     }
 
     const shippingAddress = user.address;
 
     if (!shippingAddress?.zipCode) {
       await session.abortTransaction();
-      return fail(res, 'CEP obrigatório no perfil do usuário', 400);
+      return fail(res, "CEP obrigatório no perfil do usuário", 400);
     }
 
     const productIds = items.map(item => item.productId || item.product);
@@ -103,7 +109,9 @@ const createOrder = async (req, res, next) => {
     subtotal = Number(subtotal.toFixed(2));
 
     /**
-     * Calcular frete automático
+     * ========================
+     * CALCULAR FRETE
+     * ========================
      */
 
     const shippingOptions = await calcularFrete({
@@ -126,7 +134,7 @@ const createOrder = async (req, res, next) => {
 
     if (!shippingOptions || !shippingOptions.length) {
       await session.abortTransaction();
-      return fail(res, 'Nenhuma opção de frete encontrada', 400);
+      return fail(res, "Nenhuma opção de frete encontrada", 400);
     }
 
     const selectedShipping = shippingOptions.sort(
@@ -137,7 +145,9 @@ const createOrder = async (req, res, next) => {
     const total = Number((subtotal + shipping).toFixed(2));
 
     /**
-     * Criar pedido
+     * ========================
+     * CRIAR PEDIDO
+     * ========================
      */
 
     const order = await Order.create([{
@@ -150,7 +160,7 @@ const createOrder = async (req, res, next) => {
       shippingCompany: selectedShipping.company?.name,
       shippingEstimatedDays: selectedShipping.delivery_time,
       shippingAddress,
-      status: 'pending',
+      status: "pending",
     }], { session });
 
     await session.commitTransaction();
@@ -163,16 +173,18 @@ const createOrder = async (req, res, next) => {
     await session.abortTransaction();
     session.endSession();
 
-    return next(error);
+    console.error("Erro ao criar pedido:", error);
+
+    return fail(res, "Erro ao criar pedido", 500);
   }
 };
 
 
-
 /**
- * Buscar pedidos do usuário (Minha Conta → Minhas Compras)
+ * ========================
+ * BUSCAR PEDIDOS DO USUÁRIO
+ * ========================
  */
-
 const getMyOrders = async (req, res) => {
 
   try {
@@ -180,7 +192,7 @@ const getMyOrders = async (req, res) => {
     const orders = await Order.find({
       user: req.user._id,
     })
-      .populate('items.product', 'name image price')
+      .populate("items.product", "name image price")
       .sort({ createdAt: -1 });
 
     return ok(res, orders);
@@ -189,10 +201,9 @@ const getMyOrders = async (req, res) => {
 
     console.error(error);
 
-    return fail(res, 'Erro ao buscar pedidos', 500);
+    return fail(res, "Erro ao buscar pedidos", 500);
   }
 };
-
 
 module.exports = {
   createOrder,
