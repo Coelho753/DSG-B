@@ -1,8 +1,10 @@
 require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+// ROTAS
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
@@ -16,36 +18,40 @@ const webhookRoutes = require("./routes/webhookRoutes");
 const checkoutRoutes = require("./routes/checkoutRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 
-
-
-
-
-
+// JOBS
 const startTrackingJob = require("./jobs/trackingJob");
-
-const { startTrackingCron } = require('./jobs/trackingCron');
-
-startTrackingCron();
+const { startTrackingCron } = require("./jobs/trackingCron");
 
 const app = express();
 
+// 🔹 MIDDLEWARES
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// 🔹 ROTAS
+// 🔹 INICIA CRON
+startTrackingCron();
+
+// 🔹 ROTAS DA API
 app.use("/api/auth", authRoutes);
-app.use("/api/promotions", promotionRoutes);
-app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/cart", cartRoutes);
+
+app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/promotions", promotionRoutes);
+
+app.use("/api/cart", cartRoutes);
 app.use("/api/frete", freteRoutes);
-app.use("/api/order", orderRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/webhooks", webhookRoutes);
-app.use("/api/checkout", checkoutRoutes);
+
+app.use("/api/orders", orderRoutes);     // pedidos
+app.use("/api/checkout", checkoutRoutes); // criar pedido
+
+app.use("/api/payments", paymentRoutes); // PIX / MercadoPago
+app.use("/api/webhooks", webhookRoutes); // webhook pagamento
+
 app.use("/api/coupons", couponRoutes);
 
+// 🔹 ROTAS DE TESTE
 app.get("/", (req, res) => {
   res.send("API funcionando");
 });
@@ -54,19 +60,22 @@ app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
 
+// 🔹 PORTA
 const PORT = process.env.PORT || 5000;
 
-// 🔹 CONECTA AO BANCO E SÓ DEPOIS INICIA SERVIDOR + JOB
+// 🔹 CONEXÃO COM MONGODB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
+
     console.log("MongoDB conectado");
 
-    // 🔥 Inicia o job de rastreio
+    // 🔥 inicia job de rastreio
     startTrackingJob();
 
     app.listen(PORT, () => {
       console.log(`Servidor rodando na porta ${PORT}`);
     });
+
   })
   .catch(err => {
     console.error("Erro ao conectar no MongoDB:", err);
