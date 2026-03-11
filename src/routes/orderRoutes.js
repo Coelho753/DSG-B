@@ -1,11 +1,13 @@
 const express = require("express");
 const router = express.Router();
+
+const authMiddleware = require("../middlewares/authMiddleware");
 const orderController = require("../controllers/orderController");
 
-// rota principal
-router.post("/", orderController.createOrder);
+// criar pedido
+router.post("/", authMiddleware, orderController.createOrder);
 
-// rota compatível com checkout
-router.post("/create-order", orderController.createOrder);
+// listar pedidos do usuário
+router.get("/my-orders", authMiddleware, orderController.getMyOrders);
 
 module.exports = router;
