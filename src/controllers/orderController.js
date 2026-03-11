@@ -39,7 +39,7 @@ const createOrder = async (req, res, next) => {
       return fail(res, "Usuário não encontrado", 404);
     }
 
-    const shippingAddress = user.address;
+    const shippingAddress = req.body.shippingAddress || user.address;
 
     if (!shippingAddress?.zipCode) {
       await session.abortTransaction();
