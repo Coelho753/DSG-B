@@ -104,3 +104,27 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Erro interno no servidor" });
   }
 };
+
+exports.logout = async (_req, res) => {
+  return res.json({ message: "Logout realizado com sucesso" });
+};
+
+exports.session = async (req, res) => {
+  return res.json({
+    user: {
+      id: req.user._id,
+      email: req.user.email,
+      role: req.user.role,
+      name: req.user.name,
+    },
+  });
+};
+
+exports.hasRole = async (req, res) => {
+  const role = String(req.query.role || "").toLowerCase();
+  if (!role) {
+    return res.status(400).json({ message: "role é obrigatório" });
+  }
+
+  return res.json({ hasRole: req.user.role === role });
+};
