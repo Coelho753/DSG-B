@@ -1,8 +1,4 @@
-/**
- * Model: define o schema/estrutura persistida no MongoDB via Mongoose.
- * Arquivo: src/models/Order.js
- */
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const addressSchema = new mongoose.Schema(
   {
@@ -11,41 +7,121 @@ const addressSchema = new mongoose.Schema(
     city: String,
     state: String,
     zipCode: String,
-    complement: String,
+    complement: String
   },
   { _id: false }
 );
 
 const orderItemSchema = new mongoose.Schema(
   {
-    product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-    name: { type: String },
-    quantity: { type: Number, required: true, min: 1 },
-    unitPrice: { type: Number, required: true, min: 0 },
-    subtotal: { type: Number, required: true, min: 0 },
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true
+    },
+
+    name: String,
+
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1
+    },
+
+    unitPrice: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+
+    subtotal: {
+      type: Number,
+      required: true,
+      min: 0
+    }
   },
   { _id: false }
 );
 
 const orderSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true
+    },
+
     items: [orderItemSchema],
-    subtotal: { type: Number, required: true, min: 0 },
-    shipping: { type: Number, default: 0 },
-    total: { type: Number, required: true, min: 0 },
-    shippingAddress: { type: addressSchema },
+
+    subtotal: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+
+    shipping: {
+      type: Number,
+      default: 0
+    },
+
+    total: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+
+    /**
+     * Endereço de entrega
+     */
+    shippingAddress: addressSchema,
+
+    /**
+     * Dados do frete
+     */
+
+    shippingServiceId: String,
+
+    shippingCompany: String,
+
+    shippingEstimatedDays: Number,
+
+    shipmentStatus: {
+      type: String,
+      default: "pending"
+    },
+
+    /**
+     * Status do pedido
+     */
+
     status: {
       type: String,
-      enum: ['pending', 'paid', 'cancelled'],
-      default: 'pending',
-      index: true,
+      enum: ["pending", "paid", "cancelled"],
+      default: "pending",
+      index: true
     },
-    externalReference: { type: String, index: true },
-    paymentId: { type: String, index: true },
-    paidAt: { type: Date },
+
+    /**
+     * Pagamento
+     */
+
+    externalReference: {
+      type: String,
+      index: true
+    },
+
+    paymentId: {
+      type: String,
+      index: true
+    },
+
+    paidAt: Date
   },
-  { timestamps: true }
+  {
+    timestamps: true
+  }
 );
 
-module.exports = mongoose.model('Order', orderSchema);
+module.exports = mongoose.model("Order", orderSchema);
