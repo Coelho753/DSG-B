@@ -32,5 +32,12 @@ app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use("/api/shipping", require("./routes/shippingRoutes"));
 
 app.use("/api/promotions", require("./routes/promotionRoutes"));
+app.use("/api/site-content", require("./routes/siteContentRoutes"));
+app.use("/api/membership-codes", require("./routes/membershipCodeRoutes"));
+app.use("/api/simulador", require("./routes/simulatorRoutes"));
+
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 
 module.exports = app;
