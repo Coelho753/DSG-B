@@ -12,16 +12,16 @@ const { ok, fail } = require("../utils/apiResponse");
  * CRIAR PEDIDO
  * ========================
  */
-const createOrder = async (req, res, next) => {
+const createOrder = async (req, res) => {
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
 
-    const items = req.body.items || req.body.produtos || [];
+    const items = req.body.items || [];
 
-    if (!Array.isArray(items) || !items.length) {
+    if (!Array.isArray(items) || items.length === 0) {
       await session.abortTransaction();
       return fail(res, "Itens obrigatórios", 400);
     }
@@ -31,7 +31,6 @@ const createOrder = async (req, res, next) => {
       return fail(res, "Usuário não autenticado", 401);
     }
 
-    // Buscar usuário
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -43,10 +42,10 @@ const createOrder = async (req, res, next) => {
 
     if (!shippingAddress?.zipCode) {
       await session.abortTransaction();
-      return fail(res, "CEP obrigatório no perfil do usuário", 400);
+      return fail(res, "CEP obrigatório", 400);
     }
 
-    const productIds = items.map(item => item.productId || item.product);
+    const productIds = items.map(item => item.productId);
 
     const products = await Product.find({
       _id: { $in: productIds }
@@ -63,8 +62,8 @@ const createOrder = async (req, res, next) => {
 
     for (const item of items) {
 
-      const productId = String(item.productId || item.product);
-      const quantity = Number(item.quantity || item.quantidade || 0);
+      const productId = String(item.productId);
+      const quantity = Number(item.quantity);
 
       const product = productMap.get(productId);
 
@@ -94,7 +93,7 @@ const createOrder = async (req, res, next) => {
         name: product.name,
         quantity,
         unitPrice: responseProduct.finalPrice,
-        subtotal: itemSubtotal,
+        subtotal: itemSubtotal
       });
 
       if (product.stock !== -1) {
@@ -116,10 +115,10 @@ const createOrder = async (req, res, next) => {
 
     const shippingOptions = await calcularFrete({
       from: {
-        postal_code: process.env.STORE_POSTAL_CODE,
+        postal_code: process.env.STORE_POSTAL_CODE
       },
       to: {
-        postal_code: shippingAddress.zipCode,
+        postal_code: shippingAddress.zipCode
       },
       products: orderItems.map(item => ({
         name: item.name,
@@ -128,8 +127,8 @@ const createOrder = async (req, res, next) => {
         weight: 0.3,
         width: 15,
         height: 10,
-        length: 20,
-      })),
+        length: 20
+      }))
     });
 
     if (!shippingOptions || !shippingOptions.length) {
@@ -142,6 +141,7 @@ const createOrder = async (req, res, next) => {
     )[0];
 
     const shipping = Number(selectedShipping.price);
+
     const total = Number((subtotal + shipping).toFixed(2));
 
     /**
@@ -160,7 +160,7 @@ const createOrder = async (req, res, next) => {
       shippingCompany: selectedShipping.company?.name,
       shippingEstimatedDays: selectedShipping.delivery_time,
       shippingAddress,
-      status: "pending",
+      status: "pending"
     }], { session });
 
     await session.commitTransaction();
@@ -185,12 +185,13 @@ const createOrder = async (req, res, next) => {
  * BUSCAR PEDIDOS DO USUÁRIO
  * ========================
  */
+
 const getMyOrders = async (req, res) => {
 
   try {
 
     const orders = await Order.find({
-      user: req.user._id,
+      user: req.user._id
     })
       .populate("items.product", "name image price")
       .sort({ createdAt: -1 });
@@ -207,5 +208,5 @@ const getMyOrders = async (req, res) => {
 
 module.exports = {
   createOrder,
-  getMyOrders,
+  getMyOrders
 };
